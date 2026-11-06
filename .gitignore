@@ -1,0 +1,17 @@
+.DS_Store
+__pycache__
+*.log
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.lox
+*.run.xml
+*.synctex.gz
+*.toc
+*.out
+*.fls
+*.fdb_latexmk
+*SAVE-ERROR
+*(busy)
+_minted
