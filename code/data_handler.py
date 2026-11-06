@@ -41,27 +41,45 @@ def load_data(file_path, config):
     return df, close_price
 
 
-# Get the five closest options for each maturity on each side closest to ATM
-def get_closest_options(df, price_underlying, num_options=5):
-    df = df.copy()  # Create a copy to avoid modifying the original DataFrame
-    # exclude options that are not of the specified type
+def get_closest_options(df, price_underlying, num_options=10):
+    df = df.copy()
+    n_each_side = num_options // 2
+
     df["abs_diff"] = (df["Strike"] - price_underlying).abs()
-    df.sort_values(by="abs_diff", inplace=True)
+    df = df.sort_values("abs_diff")
 
-    closest_options = pd.DataFrame()
+    closest_options = []
+
     for maturity in df["exdate"].unique():
-        # Filter the DataFrame for the current maturity
         df_maturity = df[df["exdate"] == maturity]
-        puts = df_maturity[df_maturity["cp_flag"] == "P"].head(num_options)
-        calls = df_maturity[df_maturity["cp_flag"] == "C"].head(num_options)
 
-        # We assume that the puts and calls have the same strike
-        row = pd.merge(
-            puts, calls, on=["Strike", "exdate", "date"], suffixes=("_put", "_call")
+        below = df_maturity[df_maturity["Strike"] < price_underlying]
+        above = df_maturity[df_maturity["Strike"] > price_underlying]
+
+        selected = pd.concat(
+            [
+                below.groupby("cp_flag").head(n_each_side),
+                above.groupby("cp_flag").head(n_each_side),
+            ]
         )
-        closest_options = pd.concat([closest_options, row], ignore_index=True)
 
-    return closest_options
+        puts = selected[selected["cp_flag"] == "P"]
+        calls = selected[selected["cp_flag"] == "C"]
+
+        row = pd.merge(
+            puts,
+            calls,
+            on=["Strike", "exdate", "date"],
+            suffixes=("_put", "_call"),
+        )
+
+        closest_options.append(row)
+
+    return (
+        pd.concat(closest_options, ignore_index=True)
+        if closest_options
+        else pd.DataFrame()
+    )
 
 
 # put call parity price
@@ -128,6 +146,18 @@ def infer_dividend_yield_and_discount_rate(
         return inferred_r, inferred_q
     else:
         raise ValueError("Optimization failed: " + result.message)
+
+
+def clean_data(df):
+    # Convert date columns to datetime
+    df["date"] = pd.to_datetime(df["date"])
+    df["exdate"] = pd.to_datetime(df["exdate"])
+
+    # remove rows with a 0 bid or ask price
+    df = df[(df["Bid"] > 0) & (df["Ask"] > 0)]
+    # remove ITM opions
+
+    return df
 
 
 if __name__ == "__main__":
