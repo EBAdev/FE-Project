@@ -200,3 +200,106 @@ class FourierPricer:
             "call": self.call_price(method),
             "put": self.put_price(method),
         }
+
+
+def _integration_grid(
+    u_max: float = 400.0,
+    panel_width: float = 10.0,
+    nodes_per_panel: int = 16,
+):
+    """Composite Gauss-Legendre nodes and weights on [0, u_max]."""
+    x, w = np.polynomial.legendre.leggauss(nodes_per_panel)
+    # Finer panels near 0 resolve the 1/(u^2 + 1/4)-type peaks.
+    edges = np.concatenate(
+        [[0.0, 0.5, 1.0, 2.0, 4.0, 7.0], np.arange(10.0, u_max + panel_width, panel_width)]
+    )
+    edges = edges[edges <= u_max]
+    left, right = edges[:-1], edges[1:]
+    u = (0.5 * (right - left)[:, None] * (x[None, :] + 1.0) + left[:, None]).ravel()
+    weights = (0.5 * (right - left)[:, None] * w[None, :]).ravel()
+    return u, weights
+
+
+def carr_madan_call_prices(
+    model,
+    S0: float,
+    strikes: np.ndarray,
+    T: float,
+    Xt: np.ndarray,
+    alpha: float = 1.5,
+    **grid_kwargs,
+) -> np.ndarray:
+    """
+    Carr-Madan call prices for many strikes with a single maturity.
+
+    The characteristic function does not depend on the strike, so it is
+    evaluated once on a composite Gauss-Legendre grid and reused for every
+    strike. The model is assumed to be priced at t = 0.
+    """
+    if alpha <= 0:
+        raise ValueError("alpha must be positive.")
+
+    log_k = np.log(np.asarray(strikes, dtype=float))
+    u, weights = _integration_grid(**grid_kwargs)
+
+    shifted_u = u - 1j * (alpha + 1.0)
+    denominator = alpha**2 + alpha - u**2 + 1j * (2.0 * alpha + 1.0) * u
+    psi = (
+        np.exp(-model.r * T)
+        * model.characteristic_function(shifted_u, 0.0, T, Xt)
+        / denominator
+    )
+
+    phase = np.exp(-1j * np.outer(log_k, u))
+    integral = np.real(phase * psi[None, :]) @ weights
+
+    return np.exp(-alpha * log_k) * integral / np.pi
+
+
+def lewis_call_prices(
+    model,
+    S0: float,
+    strikes: np.ndarray,
+    T: float,
+    Xt: np.ndarray,
+    **grid_kwargs,
+) -> np.ndarray:
+    """Lewis call prices for many strikes with a single maturity."""
+    strikes = np.asarray(strikes, dtype=float)
+    forward = S0 * np.exp((model.r - model.q) * T)
+    u, weights = _integration_grid(**grid_kwargs)
+
+    z = u - 0.5j
+    phi = np.exp(-1j * z * np.log(forward)) * model.characteristic_function(
+        z, 0.0, T, Xt
+    )
+
+    phase = np.exp(-1j * np.outer(np.log(strikes / forward), u))
+    integral = np.real(phase * phi[None, :]) @ (weights / (u**2 + 0.25))
+
+    return S0 * np.exp(-model.q * T) - np.sqrt(forward * strikes) * np.exp(
+        -model.r * T
+    ) * integral / np.pi
+
+
+def probability_call_prices(
+    model,
+    S0: float,
+    strikes: np.ndarray,
+    T: float,
+    Xt: np.ndarray,
+    **grid_kwargs,
+) -> np.ndarray:
+    """Probability-representation (P1/P2) call prices for many strikes."""
+    strikes = np.asarray(strikes, dtype=float)
+    forward = S0 * np.exp((model.r - model.q) * T)
+    u, weights = _integration_grid(**grid_kwargs)
+
+    phase = np.exp(-1j * np.outer(np.log(strikes), u))
+    f1 = model.characteristic_function(u - 1j, 0.0, T, Xt) / (1j * u * forward)
+    f2 = model.characteristic_function(u, 0.0, T, Xt) / (1j * u)
+
+    pi1 = 0.5 + (np.real(phase * f1[None, :]) @ weights) / np.pi
+    pi2 = 0.5 + (np.real(phase * f2[None, :]) @ weights) / np.pi
+
+    return S0 * np.exp(-model.q * T) * pi1 - strikes * np.exp(-model.r * T) * pi2

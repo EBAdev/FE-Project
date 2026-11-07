@@ -154,17 +154,12 @@ class SVJJModel(AffineModel):
     def c(self, u):
         return 1 - self.rho_j * self.mu_v * 1j * u
 
-    def gamma(self, u):
-        return np.sqrt(self.b(u) ** 2 + self.a(u) * self.sigma_v**2)
+    def gamma(self, b, a):
+        return np.sqrt(b**2 + a * self.sigma_v**2)
 
-    def d(self, u, t, T):
+    def d(self, a, b, c, gamma, tau):
 
-        gamma = self.gamma(u)
-        a = self.a(u)
-        b = self.b(u)
-        c = self.c(u)
-
-        frac1 = ((gamma - b) * (T - t)) / ((gamma - b) * c + a * self.mu_v)
+        frac1 = ((gamma - b) * tau) / ((gamma - b) * c + a * self.mu_v)
         f2_top = (
             2
             * self.mu_v
@@ -172,48 +167,51 @@ class SVJJModel(AffineModel):
             * np.log(
                 1
                 - (((gamma + b) * c - a * self.mu_v) / (2 * gamma * c))
-                * (1 - np.exp(-gamma * (T - t)))
+                * (1 - np.exp(-gamma * tau))
             )
         )
         f2_bottom = (gamma * c) ** 2 - (b * c - a * self.mu_v) ** 2
 
         return frac1 - f2_top / f2_bottom
 
-    def A0(self, u, t, T):
-        b = self.b(u)
-        gamma = self.gamma(u)
+    def A0(self, a, b, gamma, tau):
 
-        t1 = ((gamma + b) / self.sigma_v**2) * (T - t)
+        t1 = ((gamma + b) / self.sigma_v**2) * tau
         t2 = (2 / self.sigma_v**2) * np.log(
-            1 - (gamma + b) / (2 * gamma) * (1 - np.exp(-gamma * (T - t)))
+            1 - (gamma + b) / (2 * gamma) * (1 - np.exp(-gamma * tau))
         )
 
         return -self.kappa_v * self.vbar * (t1 + t2)
 
-    def f(self, u, t, T):
+    def f(self, d, u):
         fact = np.exp(1j * u * self.mu_s - 0.5 * u**2 * self.sigma**2)
-        return fact * self.d(u, t, T)
+        return fact * d
 
-    def A(self, u, t, T):
-        t1 = self.lmbda * (T - t) * (1 + self.mubar * 1j * u)
-        drift = 1j * u * (self.r - self.q) * (T - t)
-        return self.A0(u, t, T) - t1 + self.lmbda * self.f(u, t, T) + drift
+    def A(self, A0, f, u, tau):
+        t1 = self.lmbda * tau * (1 + self.mubar * 1j * u)
+        drift = 1j * u * (self.r - self.q) * tau
+        return A0 - t1 + self.lmbda * f + drift
 
-    def B(self, u, t, T):
-        gamma = self.gamma(u)
-        a = self.a(u)
-        b = self.b(u)
+    def B(self, a, b, gamma, tau):
 
-        top = a * (1 - np.exp(-gamma * (T - t)))
-        bottom = 2 * gamma - (gamma + b) * (1 - np.exp(-gamma * (T - t)))
+        top = a * (1 - np.exp(-gamma * tau))
+        bottom = 2 * gamma - (gamma + b) * (1 - np.exp(-gamma * tau))
         return -(top / bottom)
 
     def characteristic_function(self, u, t, T, Xt):
-
         Yt = Xt[0]
         Vt = Xt[1]
-        A = self.A(u, t, T)
-        B = self.B(u, t, T)
+
+        tau = T - t
+        a = self.a(u)
+        b = self.b(u)
+        c = self.c(u)
+        gamma = self.gamma(b, a)
+        d = self.d(a, b, c, gamma, tau)
+        A0 = self.A0(a, b, gamma, tau)
+        f = self.f(d, u)
+        A = self.A(A0, f, u, tau)
+        B = self.B(a, b, gamma, tau)
 
         return np.exp(1j * u * Yt) * np.exp(A + B * Vt)
 
