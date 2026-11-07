@@ -17,7 +17,7 @@ SHEETS = {
 }
 
 
-def load_data(file_path, config):
+def load_data(file_path=FILE_PATH, config=SHEETS["SPX_options"]):
     sheet = config["sheet_name"]
 
     with pd.ExcelFile(file_path) as workbook:
@@ -29,7 +29,7 @@ def load_data(file_path, config):
             nrows=config["end_row"] - config["start_row"] + 1,
         )
 
-        close_price = pd.read_excel(
+        underlying_close = pd.read_excel(
             workbook,
             sheet_name=sheet,
             usecols=config["close_cell"][0],
@@ -38,7 +38,7 @@ def load_data(file_path, config):
             header=None,
         ).iat[0, 0]
 
-    return df, close_price
+    return df, underlying_close
 
 
 def get_closest_options(df, price_underlying, num_options=10):
@@ -148,33 +148,42 @@ def infer_dividend_yield_and_discount_rate(
         raise ValueError("Optimization failed: " + result.message)
 
 
-def clean_data(df):
+def clean_data(df, price_underlying):
     # Convert date columns to datetime
+    df.copy()
     df["date"] = pd.to_datetime(df["date"])
     df["exdate"] = pd.to_datetime(df["exdate"])
 
     # remove rows with a 0 bid or ask price
-    df = df[(df["Bid"] > 0) & (df["Ask"] > 0)]
+    df = df[(df["best_bid"] > 0) & (df["best_offer"] > 0)]
     # remove ITM opions
+    df = df[
+        (df["cp_flag"] == "C") & (df["Strike"] > price_underlying)
+        | (df["cp_flag"] == "P") & (df["Strike"] < price_underlying)
+    ]
 
     return df
 
 
+def load_and_clean_data(file_path=FILE_PATH, config=SHEETS["SPX_options"]):
+    df, underlying_close = load_data(file_path, config)
+    df = clean_data(df)
+    return df, underlying_close
+
+
 if __name__ == "__main__":
     # Load the data
-    df, close_price = load_data(FILE_PATH, SHEETS["SPX_options"])
+    df, underlying_close = load_data()
 
     # Get the closest options
-    closest_options = get_closest_options(df, close_price)
-    print("Closest options:")
-    print(closest_options)
+    closest_options = get_closest_options(df, underlying_close)
     closest_options["time_to_maturity"] = (
         closest_options["exdate"] - closest_options["date"]
     ).dt.days / 365.0
 
     # Infer dividend yield and discount rates
     inferred_r, inferred_q = infer_dividend_yield_and_discount_rate(
-        closest_options, close_price
+        closest_options, underlying_close
     )
 
     print(f"Inferred dividend yield (q): {inferred_q:.6f}")
@@ -182,3 +191,11 @@ if __name__ == "__main__":
 
     for maturity, rate in inferred_r.items():
         print(f"{maturity.date()}: {rate:.6f}")
+
+    clean_df = clean_data(df, underlying_close)
+    # clean the data and print the removed rows
+    removed_rows = df[~df.index.isin(clean_df.index)]
+
+    print(f"\nCleaning removed: {removed_rows.shape[0]} rows")
+    print(f"Remaining rows after cleaning: {len(clean_df)}")
+    print(f"Final cleaned data:\n{clean_df.head()}")
