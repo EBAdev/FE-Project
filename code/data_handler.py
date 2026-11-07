@@ -17,7 +17,9 @@ SHEETS = {
 }
 
 
-def load_data(file_path=FILE_PATH, config=SHEETS["SPX_options"]):
+def load_data(
+    file_path=FILE_PATH, config=SHEETS["SPX_options"], clean=True, infer_q_r=True
+):
     sheet = config["sheet_name"]
 
     with pd.ExcelFile(file_path) as workbook:
@@ -38,7 +40,23 @@ def load_data(file_path=FILE_PATH, config=SHEETS["SPX_options"]):
             header=None,
         ).iat[0, 0]
 
-    return df, underlying_close
+    df["time_to_maturity"] = (df["exdate"] - df["date"]).dt.days / 365.0
+
+    return_value = {"dataframe": df, "underlying_close": underlying_close}
+
+    if infer_q_r:
+        closest_options = get_closest_options(df, underlying_close)
+        inferred_r, inferred_q = infer_dividend_yield_and_discount_rate(
+            closest_options, underlying_close
+        )
+        return_value["r_by_maturity"] = inferred_r
+        return_value["q"] = inferred_q
+
+    if clean:
+        df = clean_data(df, underlying_close)
+        return_value["cleaned_dataframe"] = df
+
+    return return_value
 
 
 def get_closest_options(df, price_underlying, num_options=10):
@@ -69,7 +87,7 @@ def get_closest_options(df, price_underlying, num_options=10):
         row = pd.merge(
             puts,
             calls,
-            on=["Strike", "exdate", "date"],
+            on=["Strike", "exdate", "date", "time_to_maturity"],
             suffixes=("_put", "_call"),
         )
 
@@ -163,39 +181,3 @@ def clean_data(df, price_underlying):
     ]
 
     return df
-
-
-def load_and_clean_data(file_path=FILE_PATH, config=SHEETS["SPX_options"]):
-    df, underlying_close = load_data(file_path, config)
-    df = clean_data(df)
-    return df, underlying_close
-
-
-if __name__ == "__main__":
-    # Load the data
-    df, underlying_close = load_data()
-
-    # Get the closest options
-    closest_options = get_closest_options(df, underlying_close)
-    closest_options["time_to_maturity"] = (
-        closest_options["exdate"] - closest_options["date"]
-    ).dt.days / 365.0
-
-    # Infer dividend yield and discount rates
-    inferred_r, inferred_q = infer_dividend_yield_and_discount_rate(
-        closest_options, underlying_close
-    )
-
-    print(f"Inferred dividend yield (q): {inferred_q:.6f}")
-    print("\nInferred discount rates:")
-
-    for maturity, rate in inferred_r.items():
-        print(f"{maturity.date()}: {rate:.6f}")
-
-    clean_df = clean_data(df, underlying_close)
-    # clean the data and print the removed rows
-    removed_rows = df[~df.index.isin(clean_df.index)]
-
-    print(f"\nCleaning removed: {removed_rows.shape[0]} rows")
-    print(f"Remaining rows after cleaning: {len(clean_df)}")
-    print(f"Final cleaned data:\n{clean_df.head()}")
