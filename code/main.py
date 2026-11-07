@@ -34,6 +34,6 @@ option = FourierPricer(
     Xt=Xt,
 )
 
-print("Lewis:", option.price(method="lewis"))
-print("Carr-Madan:", option.price(method="carr_madan"))
-print("Probability:", option.price(method="probability"))
+print("Lewis:", option.call_price(method="lewis"))
+print("Carr-Madan:", option.call_price(method="carr_madan"))
+print("Probability:", option.call_price(method="probability"))

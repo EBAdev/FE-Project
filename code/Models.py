@@ -195,9 +195,9 @@ class SVJJModel(AffineModel):
         return fact * self.d(u, t, T)
 
     def A(self, u, t, T):
-        # TODO: Check if this is correct, might be missing a term related to the drift
         t1 = self.lmbda * (T - t) * (1 + self.mubar * 1j * u)
-        return self.A0(u, t, T) - t1 + self.lmbda * self.f(u, t, T)
+        drift = 1j * u * (self.r - self.q) * (T - t)
+        return self.A0(u, t, T) - t1 + self.lmbda * self.f(u, t, T) + drift
 
     def B(self, u, t, T):
         gamma = self.gamma(u)
@@ -251,22 +251,4 @@ class HawkesModel(AffineModel):
         """
         Returns E[exp(i*u*Y_T) | X_0=x0].
         """
-        from scipy.integrate import solve_ivp
-
-        def odes(t, y):
-            A, B = y[0], y[1:]
-            dA_dt = -self.R(x0) + self.Lambda(x0) * (
-                np.exp(
-                    1j * u * self.mu_s
-                    - 0.5 * u**2 * self.sigma**2
-                    + 1j * u * self.rho_j * x0[1]
-                )
-                - 1
-            )
-            dB_dt = -self.K1.T @ B - 0.5 * np.einsum("ijk,j,k->i", self.H1, B, B)
-            return np.concatenate(([dA_dt], dB_dt))
-
-        y0 = np.concatenate(([0.0], np.zeros_like(x0)))
-        sol = solve_ivp(odes, [0, T], y0, t_eval=[T])
-        A_T, B_T = sol.y[:, -1][0], sol.y[:, -1][1:]
-        return np.exp(A_T + np.dot(B_T, x0))
+        pass
