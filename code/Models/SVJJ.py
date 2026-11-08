@@ -1,5 +1,4 @@
 import numpy as np
-
 from Models.AffineModel import AffineModel
 
 PARAMETER_NAMES = [
@@ -127,9 +126,9 @@ class SVJJModel(AffineModel):
         bottom = 2 * gamma - (gamma + b) * (1 - np.exp(-gamma * tau))
         return -(top / bottom)
 
-    def characteristic_function(self, u, t, T, Xt):
-        Yt = Xt[0]
-        Vt = Xt[1]
+    def characteristic_function(self, u, t, T, Yt):
+        Xt = Yt[0]
+        Vt = Yt[1]
 
         tau = T - t
         a = self.a(u)
@@ -142,4 +141,4 @@ class SVJJModel(AffineModel):
         A = self.A(A0, f, u, tau)
         B = self.B(a, b, gamma, tau)
 
-        return np.exp(1j * u * Yt) * np.exp(A + B * Vt)
+        return np.exp(1j * u * Xt) * np.exp(A + B * Vt)

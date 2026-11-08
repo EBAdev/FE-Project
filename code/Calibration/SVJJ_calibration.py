@@ -1,14 +1,15 @@
 import numpy as np
 import pandas as pd
-from scipy.optimize import least_squares
-
 from data_handler import load_data
 from Fourier import PRICERS
 from Models.SVJJ import PARAMETER_NAMES, SVJJModel
+from scipy.optimize import least_squares
 
 # ---------------------------------------------------------
 # SVJJ parameters
 # ---------------------------------------------------------
+
+V0 = (13 / 100) ** 2  # 0.0169
 
 INITIAL_GUESS = np.array(
     [
@@ -94,9 +95,10 @@ def price_options(params, groups, price_underlying, q):
         tau = g["tau"]
         K = g["K"]
         model = create_model(params, r, q)
-        Xt = np.array([np.log(price_underlying), params[-1]])
+        # The state vector is (log(S), V) where V is the variance process.
+        Yt = np.array([np.log(price_underlying), V0])
 
-        calls = PRICERS[METHOD](model, price_underlying, K, tau, Xt)
+        calls = PRICERS[METHOD](model, price_underlying, K, tau, Yt)
         puts = PRICERS["put_call_parity"](calls, price_underlying, K, tau, r, q)
 
         prices[g["idx"]] = np.where(g["is_call"], calls, puts)

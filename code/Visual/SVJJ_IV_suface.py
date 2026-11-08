@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
 from data_handler import load_data
 from Fourier import PRICERS
 from Models.SVJJ import PARAMETER_NAMES, SVJJModel
@@ -13,6 +12,7 @@ from option_pricing import implied_call_price, implied_volatility_call
 
 PARAMETER_FILE = "calibrated_svjj_parameters.csv"
 METHOD = "lewis"
+V0 = (13 / 100) ** 2  # 0.0169
 
 NUM_STRIKES = 60
 NUM_MATURITIES = 30
@@ -118,7 +118,7 @@ def calculate_model_surface(
         Xt = np.array(
             [
                 np.log(S0),
-                params[-1],
+                V0,
             ]
         )
 
@@ -153,7 +153,7 @@ def calculate_model_surface(
 # ---------------------------------------------------------
 
 
-def calculate_market_iv(market_data, S0, q, r_by_maturity):
+def calculate_market_iv(market_data, price_underlying, q, r_by_maturity):
     """Calculate implied volatilities for market call and put prices."""
 
     market_data = market_data.dropna(subset=["Mid"]).copy()
@@ -170,11 +170,11 @@ def calculate_market_iv(market_data, S0, q, r_by_maturity):
         price = float(row["Mid"])
 
         if row["cp_flag"] == "P":
-            price = implied_call_price(price_underlying=S0, P=price, K=K, T=T, r=r, q=q)
+            price = implied_call_price(price_underlying, P=price, K=K, T=T, r=r, q=q)
 
         iv = implied_volatility_call(
             price,
-            S0,
+            price_underlying,
             K,
             T,
             r,
@@ -186,7 +186,7 @@ def calculate_market_iv(market_data, S0, q, r_by_maturity):
     market_data["implied_vol"] = market_ivs
 
     # Calculate market log-moneyness.
-    market_data["log_moneyness"] = np.log(market_data["Strike"] / S0)
+    market_data["log_moneyness"] = np.log(market_data["Strike"] / price_underlying)
 
     return market_data
 
