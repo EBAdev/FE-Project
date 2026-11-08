@@ -1,12 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy.optimize import brentq
-from scipy.stats import norm
 
 from data_handler import load_data
 from Fourier import PRICERS
 from Models.SVJJ import PARAMETER_NAMES, SVJJModel
+from option_pricing import implied_call_price, implied_volatility_call
 
 # ---------------------------------------------------------
 # Configuration
@@ -34,51 +33,6 @@ def load_calibrated_parameters():
     )["value"]
 
     return parameters.loc[PARAMETER_NAMES].to_numpy(dtype=float)
-
-
-# ---------------------------------------------------------
-# Black-Scholes implied volatility
-# ---------------------------------------------------------
-
-
-def bs_call_price(S0, K, T, r, q, sigma):
-
-    d1 = (np.log(S0 / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
-
-    d2 = d1 - sigma * np.sqrt(T)
-
-    return S0 * np.exp(-q * T) * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
-
-
-def implied_volatility_call(price, S0, K, T, r, q):
-
-    intrinsic = max(
-        S0 * np.exp(-q * T) - K * np.exp(-r * T),
-        0.0,
-    )
-
-    upper_bound = S0 * np.exp(-q * T)
-
-    if not np.isfinite(price):
-        return np.nan
-
-    if price < intrinsic - 1e-8 or price > upper_bound + 1e-8:
-        return np.nan
-
-    price = np.clip(price, intrinsic, upper_bound)
-
-    if price - intrinsic < 1e-10:
-        return 0.0
-
-    try:
-        return brentq(
-            lambda sigma: bs_call_price(S0, K, T, r, q, sigma) - price,
-            1e-6,
-            5.0,
-            xtol=1e-8,
-        )
-    except ValueError:
-        return np.nan
 
 
 # ---------------------------------------------------------
@@ -178,8 +132,7 @@ def calculate_market_iv(market_data, S0, q, r):
         price = float(row["Mid"])
 
         if row["cp_flag"] == "P":
-            # Convert put price to equivalent call price.
-            price += S0 * np.exp(-q * T) - K * np.exp(-r * T)
+            price = implied_call_price(price_underlying=S0, P=price, K=K, T=T, r=r, q=q)
 
         iv = implied_volatility_call(
             price,

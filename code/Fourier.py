@@ -3,6 +3,8 @@ from typing import Literal
 import numpy as np
 from scipy.integrate import quad
 
+from option_pricing import put_call_parity
+
 OptionType = Literal["call", "put"]
 
 
@@ -317,26 +319,6 @@ def probability_call_prices(
     pi2 = 0.5 + (np.real(phase * f2[None, :]) @ weights) / np.pi
 
     return S0 * np.exp(-model.q * T) * pi1 - strikes * np.exp(-model.r * T) * pi2
-
-
-def put_call_parity(
-    prices: np.ndarray,
-    underlying_price: float,
-    strikes: np.ndarray,
-    tau: float,
-    r: float,
-    q: float,
-) -> np.ndarray:
-    """Convert call prices to put prices using put-call parity,
-    Args:
-        prices: Call option prices.
-        underlying_price: Current price of the underlying asset.
-        strikes: Strike prices.
-        tau: Time to maturity.
-        r: Risk-free interest rate.
-        q: Dividend yield.
-    """
-    return prices - underlying_price * np.exp(-q * tau) + strikes * np.exp(-r * tau)
 
 
 PRICERS = {

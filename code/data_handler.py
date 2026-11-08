@@ -1,7 +1,13 @@
 import numpy as np
 import pandas as pd
-from scipy.optimize import brentq, minimize
-from scipy.stats import norm
+from scipy.optimize import minimize
+
+from option_pricing import (
+    BS_call,
+    BS_put,
+    calculate_implied_volatility,
+    implied_put_price,
+)
 
 FILE_PATH = "Data20191113.xlsx"
 
@@ -111,17 +117,8 @@ def get_closest_options(df, price_underlying, num_options=10):
     )
 
 
-# put call parity price
-def implied_put_price(S, C, K, T, r, q):
-    # Calculate the put price using put-call parity
-    P = C + K * np.exp(-r * T) - S * np.exp(-q * T)
-    return P
-
-
 def put_call_parity_loss(S, C, P, K, T, r, q):
-    # Calculate the put price using put-call parity
     P_calculated = implied_put_price(S, C, K, T, r, q)
-    # Calculate the loss as the absolute difference between the calculated and actual put prices
     loss = np.abs(P_calculated - P)
     return loss
 
@@ -186,43 +183,6 @@ def clean_data(df, price_underlying):
     # remove rows with a 0 bid or ask price
     df = df[(df["best_bid"] > 0) & (df["best_offer"] > 0)]
     return df
-
-
-def BS_call(S, K, T, r, q, sigma):
-    d1 = (np.log(S / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
-    d2 = d1 - sigma * np.sqrt(T)
-    return S * np.exp(-q * T) * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
-
-
-def BS_put(S, K, T, r, q, sigma):
-    d1 = (np.log(S / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
-    d2 = d1 - sigma * np.sqrt(T)
-    return K * np.exp(-r * T) * norm.cdf(-d2) - S * np.exp(-q * T) * norm.cdf(-d1)
-
-
-def calculate_implied_volatility(
-    price_underlying, option_mid, strike, time_to_maturity, r, q, option_type
-):
-    # Define the function to find the root of
-    def objective(sigma):
-        if option_type == "C":
-            return (
-                BS_call(price_underlying, strike, time_to_maturity, r, q, sigma)
-                - option_mid
-            )
-        else:
-            return (
-                BS_put(price_underlying, strike, time_to_maturity, r, q, sigma)
-                - option_mid
-            )
-
-    # Use Brent's method to find the implied volatility
-    try:
-        implied_vol = brentq(objective, 1e-6, 5)
-    except ValueError:
-        implied_vol = np.nan  # Return NaN if no solution is found
-
-    return implied_vol
 
 
 def add_IV_column(df, price_underlying, r_by_maturity, q):
