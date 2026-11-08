@@ -1,28 +1,14 @@
 import numpy as np
 import pandas as pd
-from scipy.optimize import brentq, least_squares
-from scipy.special import ndtr
-from scipy.stats import norm
+from scipy.optimize import least_squares
 
 from data_handler import load_data
-from Fourier import carr_madan_call_prices, lewis_call_prices, probability_call_prices
-from Models import SVJJModel
+from Fourier import PRICERS
+from Models.SVJJ import PARAMETER_NAMES, SVJJModel
 
 # ---------------------------------------------------------
 # SVJJ parameters
 # ---------------------------------------------------------
-
-PARAMETER_NAMES = [
-    "lmbda",
-    "rho",
-    "vbar",
-    "kappa_v",
-    "sigma_v",
-    "mu_s",
-    "sigma",
-    "rho_j",
-    "mu_v",
-]
 
 INITIAL_GUESS = np.array(
     [
@@ -67,6 +53,12 @@ UPPER_BOUNDS = np.array(
     ]
 )
 
+# ---------------------------------------------------------
+# Pricing configuration
+# ---------------------------------------------------------
+
+METHOD = "lewis"
+PRICE_FLOOR = 1.0
 
 # ---------------------------------------------------------
 # Model pricing
@@ -87,7 +79,7 @@ def create_model(params, r, q):
     )
 
 
-def price_options(params, groups, S0, q):
+def price_options(params, groups, price_underlying, q):
     """
     Price all market options. `groups` holds, per maturity, the option
     indices, strikes, call mask and rate (see build_groups).
@@ -98,12 +90,14 @@ def price_options(params, groups, S0, q):
     prices = np.empty(n)
 
     for g in groups:
-        model = create_model(params, g["r"], q)
-        Xt = np.array([np.log(S0), V0])
-        T = g["T"]
+        r = g["r"]
+        tau = g["tau"]
+        K = g["K"]
+        model = create_model(params, r, q)
+        Xt = np.array([np.log(price_underlying), params[-1]])
 
-        calls = PRICERS[METHOD](model, S0, g["K"], T, Xt)
-        puts = calls - S0 * np.exp(-q * T) + g["K"] * np.exp(-g["r"] * T)
+        calls = PRICERS[METHOD](model, price_underlying, K, tau, Xt)
+        puts = PRICERS["put_call_parity"](calls, price_underlying, K, tau, r, q)
 
         prices[g["idx"]] = np.where(g["is_call"], calls, puts)
 
@@ -118,7 +112,7 @@ def build_groups(market_data, r_by_maturity):
 
     exdates = pd.to_datetime(market_data["exdate"]).to_numpy()
     strikes = market_data["Strike"].to_numpy(dtype=float)
-    maturities = market_data["time_to_maturity"].to_numpy(dtype=float)
+    taus = market_data["time_to_maturity"].to_numpy(dtype=float)
     is_call = (market_data["cp_flag"] == "C").to_numpy()
 
     groups = []
@@ -128,133 +122,13 @@ def build_groups(market_data, r_by_maturity):
             {
                 "idx": idx,
                 "K": strikes[idx],
-                "T": float(maturities[idx[0]]),
+                "tau": float(taus[idx[0]]),
                 "is_call": is_call[idx],
                 "r": r_by_maturity[pd.Timestamp(exdate)],
             }
         )
 
     return groups
-
-
-# ---------------------------------------------------------
-# Implied volatility
-# ---------------------------------------------------------
-
-V0 = 0.04  # Initial variance
-
-PRICERS = {
-    "carr_madan": carr_madan_call_prices,
-    "lewis": lewis_call_prices,
-    "probability": probability_call_prices,
-}
-METHOD = "lewis"
-
-IV_LOWER = 1e-4
-IV_UPPER = 5.0
-IV_FAILURE_PENALTY = 1.0
-
-
-def black_scholes_price(sigma, S0, K, T, r, q, is_call):
-    """
-    Black-Scholes price with continuous dividend yield q.
-    """
-
-    sqrt_T = np.sqrt(T)
-    d1 = (np.log(S0 / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * sqrt_T)
-    d2 = d1 - sigma * sqrt_T
-    df_r = np.exp(-r * T)
-    df_q = np.exp(-q * T)
-
-    if is_call:
-        return S0 * df_q * norm.cdf(d1) - K * df_r * norm.cdf(d2)
-
-    return K * df_r * norm.cdf(-d2) - S0 * df_q * norm.cdf(-d1)
-
-
-def implied_volatility(price, S0, K, T, r, q, is_call):
-    """
-    Invert Black-Scholes for the implied volatility.
-    Returns NaN if the price is outside the no-arbitrage range.
-    """
-
-    if not np.isfinite(price):
-        return np.nan
-
-    def objective(sigma):
-        return black_scholes_price(sigma, S0, K, T, r, q, is_call) - price
-
-    try:
-        if objective(IV_LOWER) > 0 or objective(IV_UPPER) < 0:
-            return np.nan
-        return brentq(objective, IV_LOWER, IV_UPPER, xtol=1e-10)
-    except (ValueError, FloatingPointError):
-        return np.nan
-
-
-def implied_volatility_vec(prices, S0, K, T, r, q, is_call, n_iter=60):
-    """
-    Vectorised implied volatility by bisection on [IV_LOWER, IV_UPPER].
-    Returns NaN where the price is outside the attainable range.
-    """
-
-    sqrt_T = np.sqrt(T)
-    df_r = np.exp(-r * T)
-    df_q = np.exp(-q * T)
-
-    def bs(sigma):
-        d1 = (np.log(S0 / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * sqrt_T)
-        d2 = d1 - sigma * sqrt_T
-        call = S0 * df_q * ndtr(d1) - K * df_r * ndtr(d2)
-        put = K * df_r * ndtr(-d2) - S0 * df_q * ndtr(-d1)
-        return np.where(is_call, call, put)
-
-    lo = np.full(len(prices), IV_LOWER)
-    hi = np.full(len(prices), IV_UPPER)
-    valid = np.isfinite(prices) & (bs(lo) <= prices) & (bs(hi) >= prices)
-
-    for _ in range(n_iter):
-        mid = 0.5 * (lo + hi)
-        too_high = bs(mid) > prices
-        hi = np.where(too_high, mid, hi)
-        lo = np.where(too_high, lo, mid)
-
-    return np.where(valid, 0.5 * (lo + hi), np.nan)
-
-
-def add_market_implied_vols(market_data, S0, q, r_by_maturity):
-    """
-    Add a 'market_iv' column (from mid prices) and drop options whose
-    implied volatility cannot be computed.
-    """
-
-    r_by_maturity = {pd.Timestamp(k): v for k, v in r_by_maturity.items()}
-
-    ivs = [
-        implied_volatility(
-            price=row["Mid"],
-            S0=S0,
-            K=float(row["Strike"]),
-            T=float(row["time_to_maturity"]),
-            r=r_by_maturity[pd.Timestamp(row["exdate"])],
-            q=q,
-            is_call=row["cp_flag"] == "C",
-        )
-        for _, row in market_data.iterrows()
-    ]
-
-    market_data = market_data.copy()
-    market_data["market_iv"] = ivs
-
-    n_before = len(market_data)
-    market_data = market_data.dropna(subset=["market_iv"])
-    if len(market_data) < n_before:
-        print(
-            f"Dropped {n_before - len(market_data)} options "
-            "without a valid market implied volatility."
-        )
-
-    return market_data
 
 
 # ---------------------------------------------------------
@@ -265,34 +139,23 @@ def add_market_implied_vols(market_data, S0, q, r_by_maturity):
 def calibration_residuals(
     params,
     market_data,
-    S0,
+    price_underlying,
     q,
     r_by_maturity,
     groups=None,
 ):
     """
-    Return implied volatility residuals (model IV - market IV).
-    market_data must contain a 'market_iv' column.
+    Return price residuals (model price - market mid price), scaled by
+    max(market price, PRICE_FLOOR) so cheap and expensive options both count.
     """
 
     if groups is None:
         groups = build_groups(market_data, r_by_maturity)
 
-    model_prices = price_options(params, groups, S0, q)
+    model_prices = price_options(params, groups, price_underlying, q)
+    market_prices = market_data["Mid"].to_numpy(dtype=float)
 
-    market_iv = market_data["market_iv"].to_numpy(dtype=float)
-    strikes = market_data["Strike"].to_numpy(dtype=float)
-    maturities = market_data["time_to_maturity"].to_numpy(dtype=float)
-    is_call = (market_data["cp_flag"] == "C").to_numpy()
-    rates = np.empty(len(market_data))
-    for g in groups:
-        rates[g["idx"]] = g["r"]
-
-    model_iv = implied_volatility_vec(
-        model_prices, S0, strikes, maturities, rates, q, is_call
-    )
-
-    return np.where(np.isnan(model_iv), IV_FAILURE_PENALTY, model_iv - market_iv)
+    return (model_prices - market_prices) / np.maximum(market_prices, PRICE_FLOOR)
 
 
 # ---------------------------------------------------------
@@ -302,26 +165,23 @@ def calibration_residuals(
 
 def calibrate_svjj(
     market_data,
-    S0,
+    price_underlying,
     q,
     r_by_maturity,
     initial_guess=INITIAL_GUESS,
 ):
     """
-    Calibrate SVJJ parameters by fitting the model implied volatility
-    surface to the market implied volatilities.
+    Calibrate SVJJ parameters by fitting model prices to market mid prices.
     """
 
     # Normalize maturity keys
     r_by_maturity = {pd.Timestamp(k): v for k, v in r_by_maturity.items()}
 
-    market_data = add_market_implied_vols(market_data, S0, q, r_by_maturity)
-
-    market_data = market_data.reset_index(drop=True)
+    market_data = market_data.dropna(subset=["Mid"]).reset_index(drop=True)
     groups = build_groups(market_data, r_by_maturity)
 
     print(f"Calibrating to {len(market_data)} options...")
-    print(f"Underlying price: {S0:.4f}")
+    print(f"Underlying price: {price_underlying:.4f}")
     print(f"Dividend yield: {q:.6f}")
     print(f"Pricing method: {METHOD}")
 
@@ -330,16 +190,20 @@ def calibrate_svjj(
         x0=initial_guess,
         args=(
             market_data,
-            S0,
+            price_underlying,
             q,
             r_by_maturity,
             groups,
         ),
+        bounds=(LOWER_BOUNDS, UPPER_BOUNDS),
         method="trf",
-        loss="linear",
-        f_scale=0.01,
+        loss="soft_l1",
+        f_scale=0.05,
+        ftol=1e-12,
+        xtol=1e-12,
+        gtol=1e-12,
         x_scale="jac",
-        max_nfev=1000,
+        max_nfev=300,
         verbose=2,
     )
 
@@ -377,7 +241,7 @@ if __name__ == "__main__":
 
     parameters, result = calibrate_svjj(
         market_data=df,
-        S0=S0,
+        price_underlying=S0,
         q=q,
         r_by_maturity=r_by_maturity,
     )
@@ -399,16 +263,18 @@ if __name__ == "__main__":
     print(f"Cost: {result.cost:.8f}")
     print(f"Optimality: {result.optimality:.8f}")
 
-    # Calculate final implied volatility errors
+    # Calculate final price errors
     residuals = calibration_residuals(
         result.x,
-        add_market_implied_vols(df, S0, q, r_by_maturity).reset_index(drop=True),
+        df.dropna(subset=["Mid"]).reset_index(drop=True),
         S0,
         q,
         r_by_maturity,
     )
 
-    print(f"Mean absolute IV error: {np.mean(np.abs(residuals)):.6f}")
+    print(
+        f"Mean absolute relative price error: {np.mean(np.abs(residuals)):.6f}\nRMSE: {np.sqrt(np.mean(residuals**2)):.6f}"
+    )
 
     # Save calibrated parameters
     pd.Series(parameters).to_csv(

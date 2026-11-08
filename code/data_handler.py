@@ -1,8 +1,7 @@
-import datetime as dt
-
 import numpy as np
 import pandas as pd
-from scipy.optimize import minimize
+from scipy.optimize import brentq, minimize
+from scipy.stats import norm
 
 FILE_PATH = "Data20191113.xlsx"
 
@@ -18,7 +17,11 @@ SHEETS = {
 
 
 def load_data(
-    file_path=FILE_PATH, config=SHEETS["SPX_options"], clean=True, infer_q_r=True
+    file_path=FILE_PATH,
+    config=SHEETS["SPX_options"],
+    clean=True,
+    infer_q_r=True,
+    ITM=False,
 ):
     sheet = config["sheet_name"]
 
@@ -31,7 +34,7 @@ def load_data(
             nrows=config["end_row"] - config["start_row"] + 1,
         )
 
-        underlying_close = pd.read_excel(
+        price_underlying = pd.read_excel(
             workbook,
             sheet_name=sheet,
             usecols=config["close_cell"][0],
@@ -42,18 +45,26 @@ def load_data(
 
     df["time_to_maturity"] = (df["exdate"] - df["date"]).dt.days / 365.0
 
-    return_value = {"dataframe": df, "underlying_close": underlying_close}
+    return_value = {"dataframe": df, "underlying_close": price_underlying}
 
     if infer_q_r:
-        closest_options = get_closest_options(df, underlying_close)
+        closest_options = get_closest_options(df, price_underlying)
         inferred_r, inferred_q = infer_dividend_yield_and_discount_rate(
-            closest_options, underlying_close
+            closest_options, price_underlying
         )
         return_value["r_by_maturity"] = inferred_r
         return_value["q"] = inferred_q
 
     if clean:
-        df = clean_data(df, underlying_close)
+        df = clean_data(df, price_underlying)
+        return_value["cleaned_dataframe"] = df
+
+    if not ITM:
+        # remove ITM opions
+        df = df[
+            (df["cp_flag"] == "C") & (df["Strike"] > price_underlying)
+            | (df["cp_flag"] == "P") & (df["Strike"] < price_underlying)
+        ]
         return_value["cleaned_dataframe"] = df
 
     return return_value
@@ -174,10 +185,58 @@ def clean_data(df, price_underlying):
 
     # remove rows with a 0 bid or ask price
     df = df[(df["best_bid"] > 0) & (df["best_offer"] > 0)]
-    # remove ITM opions
-    df = df[
-        (df["cp_flag"] == "C") & (df["Strike"] > price_underlying)
-        | (df["cp_flag"] == "P") & (df["Strike"] < price_underlying)
-    ]
+    return df
 
+
+def BS_call(S, K, T, r, q, sigma):
+    d1 = (np.log(S / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
+    d2 = d1 - sigma * np.sqrt(T)
+    return S * np.exp(-q * T) * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
+
+
+def BS_put(S, K, T, r, q, sigma):
+    d1 = (np.log(S / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
+    d2 = d1 - sigma * np.sqrt(T)
+    return K * np.exp(-r * T) * norm.cdf(-d2) - S * np.exp(-q * T) * norm.cdf(-d1)
+
+
+def calculate_implied_volatility(
+    price_underlying, option_mid, strike, time_to_maturity, r, q, option_type
+):
+    # Define the function to find the root of
+    def objective(sigma):
+        if option_type == "C":
+            return (
+                BS_call(price_underlying, strike, time_to_maturity, r, q, sigma)
+                - option_mid
+            )
+        else:
+            return (
+                BS_put(price_underlying, strike, time_to_maturity, r, q, sigma)
+                - option_mid
+            )
+
+    # Use Brent's method to find the implied volatility
+    try:
+        implied_vol = brentq(objective, 1e-6, 5)
+    except ValueError:
+        implied_vol = np.nan  # Return NaN if no solution is found
+
+    return implied_vol
+
+
+def add_IV_column(df, price_underlying, r_by_maturity, q):
+    df = df.copy()
+    df["implied_volatility"] = df.apply(
+        lambda row: calculate_implied_volatility(
+            price_underlying,
+            row["Mid"],
+            row["Strike"],
+            row["time_to_maturity"],
+            r_by_maturity[row["exdate"]],
+            q,
+            row["cp_flag"],
+        ),
+        axis=1,
+    )
     return df

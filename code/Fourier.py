@@ -211,7 +211,10 @@ def _integration_grid(
     x, w = np.polynomial.legendre.leggauss(nodes_per_panel)
     # Finer panels near 0 resolve the 1/(u^2 + 1/4)-type peaks.
     edges = np.concatenate(
-        [[0.0, 0.5, 1.0, 2.0, 4.0, 7.0], np.arange(10.0, u_max + panel_width, panel_width)]
+        [
+            [0.0, 0.5, 1.0, 2.0, 4.0, 7.0],
+            np.arange(10.0, u_max + panel_width, panel_width),
+        ]
     )
     edges = edges[edges <= u_max]
     left, right = edges[:-1], edges[1:]
@@ -264,7 +267,17 @@ def lewis_call_prices(
     Xt: np.ndarray,
     **grid_kwargs,
 ) -> np.ndarray:
-    """Lewis call prices for many strikes with a single maturity."""
+    """Lewis call prices for many strikes with a single maturity.
+    Args:
+        model: A model object with a characteristic_function method.
+        S0: Current price of the underlying asset.
+        strikes: Array of strike prices.
+        T: Option maturity
+        Xt: State variables at time t=0.
+        grid_kwargs: Additional keyword arguments for the integration grid.
+    Returns:
+        Array of call option prices corresponding to the input strikes.
+    """
     strikes = np.asarray(strikes, dtype=float)
     forward = S0 * np.exp((model.r - model.q) * T)
     u, weights = _integration_grid(**grid_kwargs)
@@ -277,9 +290,10 @@ def lewis_call_prices(
     phase = np.exp(-1j * np.outer(np.log(strikes / forward), u))
     integral = np.real(phase * phi[None, :]) @ (weights / (u**2 + 0.25))
 
-    return S0 * np.exp(-model.q * T) - np.sqrt(forward * strikes) * np.exp(
-        -model.r * T
-    ) * integral / np.pi
+    return (
+        S0 * np.exp(-model.q * T)
+        - np.sqrt(forward * strikes) * np.exp(-model.r * T) * integral / np.pi
+    )
 
 
 def probability_call_prices(
@@ -303,3 +317,70 @@ def probability_call_prices(
     pi2 = 0.5 + (np.real(phase * f2[None, :]) @ weights) / np.pi
 
     return S0 * np.exp(-model.q * T) * pi1 - strikes * np.exp(-model.r * T) * pi2
+
+
+def put_call_parity(
+    prices: np.ndarray,
+    underlying_price: float,
+    strikes: np.ndarray,
+    tau: float,
+    r: float,
+    q: float,
+) -> np.ndarray:
+    """Convert call prices to put prices using put-call parity,
+    Args:
+        prices: Call option prices.
+        underlying_price: Current price of the underlying asset.
+        strikes: Strike prices.
+        tau: Time to maturity.
+        r: Risk-free interest rate.
+        q: Dividend yield.
+    """
+    return prices - underlying_price * np.exp(-q * tau) + strikes * np.exp(-r * tau)
+
+
+PRICERS = {
+    "carr_madan": carr_madan_call_prices,
+    "lewis": lewis_call_prices,
+    "probability": probability_call_prices,
+    "put_call_parity": put_call_parity,
+}
+
+
+if __name__ == "__main__":
+
+    # price a five options using all three methods and compare the results
+    from Models.SVJJ import SVJJModel
+
+    # Model parameters
+    params = {
+        "kappa_v": 2.0,
+        "vbar": 0.04,
+        "sigma_v": 0.3,
+        "mu_s": 0.05,
+        "sigma": 0.2,
+        "rho": -0.5,
+        "rho_j": 0.1,
+        "mu_v": 0.03,
+        "r": 0.01,
+        "q": 0.02,
+        "lmbda": 0.1,
+    }
+
+    model = SVJJModel(**params)
+
+    S0 = 100.0
+    strikes = np.array([90, 95, 100, 105, 110])
+
+    T = 0.5
+    Xt = np.array([np.log(S0), model.vbar])
+
+    for method in ["carr_madan", "lewis", "probability"]:
+        call_prices = PRICERS[method](model, S0, strikes, T, Xt)
+        put_prices = put_call_parity(call_prices, S0, strikes, T, model.r, model.q)
+
+        print(f"Method: {method}")
+        print("Strike\tCall Price\tPut Price")
+        for K, C, P in zip(strikes, call_prices, put_prices):
+            print(f"{K}\t{C:.4f}\t\t{P:.4f}")
+        print()
