@@ -1,0 +1,94 @@
+%%
+%%  Author: Emil Beck Aagaard Korneliussen
+%%
+%%  Front page, abstract and colophon
+%%
+%%  Original template: Jakob Lysgaard Rørsted (Mosumgaard)
+%% ============================================================================
+
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% The title page and verso (colophon)
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+% Get font-info
+\makeatletter
+\edef\fontandleading{\@memptsize.0/\the\baselineskip}
+\makeatother
+
+\begin{titlingpage}
+
+  % The actual front page (corrected for margin displacement)
+  \newlength{\frontpagecorrection}
+  \calccentering{\frontpagecorrection}
+  \begin{adjustwidth*}{\frontpagecorrection-2cm}{-\frontpagecorrection-2cm}
+
+    \centering
+    \scshape
+
+    {\fontsize{24pt}{28pt}\selectfont{Affine Models and Calibration to data}} \par
+
+    \vspace{2cm}
+
+    \includegraphics[height=10cm]{figures/segla1b}
+
+    \vspace{2cm}
+
+
+     \fontsize{20pt}{22pt}\selectfont
+    {Project in Financial Engineering}\par
+    {15$^{\text{th}}$ of May, 2026.}\par
+    \bigskip
+    \vfill
+
+    \fontsize{20pt}{22pt}\selectfont
+    {Emil Beck Aagaard Korneliussen}\par
+    % \fontsize{18pt}{20pt}\selectfont
+    % {Student nr: 202204939}\par
+    % {Exam nr: 207798 }\par
+    \bigskip
+    \vfill 
+    \fontsize{20pt}{22pt}\selectfont
+    Supervisors:\par 
+    \href{https://pure.au.dk/portal/da/persons/thko%40econ.au.dk/}{Thomas Kokholm} \par
+    \href{https://pure.au.dk/portal/da/persons/eln%40econ.au.dk/}{Elisa Nicolato} \par
+
+    \vspace{1cm}
+
+    \fontsize{12pt}{14.5pt}\selectfont
+    \href{https://econ.au.dk}{Department of Economics}\par
+    \href{https://www.au.dk/}{Aarhus University}
+
+\end{adjustwidth*}
+
+\end{titlingpage}
+
+
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% Abstracts
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+\thispagestyle{chapter}
+% ~~~~~~~~~~~~~~~~~
+% Abstract: English
+% ~~~~~~~~~~~~~~~~~
+\begin{multiabstract}{Abstract (English)} 
+\noindent 
+
+This project studies... 
+\end{multiabstract}
+
+
+% ~~~~~~~~~~~~~~~~~
+% Abstract: Danish
+% ~~~~~~~~~~~~~~~~~
+\plainbreak{2}
+
+% Switch to Danish
+\selectlanguage{danish}
+\begin{multiabstract}{Resumé (Dansk)}
+\noindent 
+Dette projekt undersøger...
+\end{multiabstract}
+
+
+% Reset document language to English
+\selectlanguage{english}

@@ -1,0 +1,33 @@
+
+
+
+
+\begin{align*}
+  \frac{\partial \beta}{\partial t} (t) &= - \begin{pmatrix}
+0 & 0\\
+-\overline{\mu} & -\delta
+\end{pmatrix}
+\begin{pmatrix}
+\beta_1(t)\\
+\beta_2(t)
+\end{pmatrix}
+- \begin{pmatrix}
+0\\
+1
+\end{pmatrix}
+(\theta(\beta(t)) - 1) \\
+\frac{\partial \alpha}{\partial t} (t) &= r- K_0 \begin{pmatrix}
+\beta_1(t)\\
+\beta_2(t)
+\end{pmatrix}
+ - \frac{1}{2} \beta_1^2 \sigma^2  
+,\end{align*}
+where  $\theta(c)$ is the jump transform, defined by:
+\[ 
+  \theta(c) = \int_{\R^{n}} \ee^{c \cdot z} \d \nu(z),\quad  c \in \C^{n}
+.\]
+No analytical solution, however, they can be solved fast by numerical routines such as the
+Runge-Kutta method.
+
+
+

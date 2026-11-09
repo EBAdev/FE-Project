@@ -1,0 +1,56 @@
+
+SVJJ:
+\[ 
+\d X_t = d \begin{pmatrix}
+Y_t\\
+V_t
+\end{pmatrix}
+= \begin{pmatrix}
+r-q-\lambda \overline{\mu}-\frac{1}{2} V_t\\
+\kappa_v (\overline{v} - V_t)
+\end{pmatrix}
+\d t
++ \sqrt{V_t}
+\begin{pmatrix}
+1 & 0\\
+\rho \sigma_v& \sqrt{1-\rho^2 }\sigma_v
+\end{pmatrix} \d W_t
++ \d Z_t
+.\]
+
+Hawkes:
+\[ 
+\d X_t = d \begin{pmatrix}
+Y_t\\
+V_t
+\end{pmatrix}
+= \begin{pmatrix}
+r-q-\lambda_t \overline{\mu} - \frac{1}{2} \sigma^2 \\
+\delta(\overline{\lambda} - \lambda_t)
+\end{pmatrix} \d t
++ \sigma \begin{pmatrix}
+1 & 0\\
+0 & 0
+\end{pmatrix}
+\d W_t
++ \begin{pmatrix}
+1\\
+\epsilon
+\end{pmatrix}
+\d Z_t
+.\]
+
+
+Another formulation we have been presented too is:
+\[ 
+\frac{\d S_t}{S_t}  (r-q- \overline{\mu} \lambda) \d t + \sqrt{V_t}\d W_t + (\ee^{J^{S}}-1) \d N_t
+.\]
+\[ 
+\d V_t = \kappa(\theta - V_t) \d t + \eta \sqrt{V_t}\d Z_t + J^{V}\d N_t
+.\]
+
+
+
+
+
+

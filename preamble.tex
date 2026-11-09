@@ -1,0 +1,969 @@
+%lav margins mindre (bedre til normale afleveringer)
+\setlrmarginsandblock{2.5cm}{*}{1} \setulmarginsandblock{3cm}{3cm}{*} \checkandfixthelayout
+
+\usepackage[utf8]{inputenc}  % Korrekt håndtering af æ, ø og å
+\usepackage[T1]{fontenc}  % Korrekt håndtering af æ, ø og å
+\usepackage{microtype}  % Typografi! Giver bl.a. pænere orddeling
+\usepackage[english,danish]{babel}
+\renewcommand\danishhyphenmins{22}
+
+\usepackage[notext]{kpfonts}
+\usepackage{amsmath, amssymb, bm, mathtools}  % Giver adgang til matematikting
+
+\usepackage{graphicx}  % Gør det muligt at indsætte billeder
+\usepackage{float} % gør det muligt at tvinge en figurs placering med [H]
+\usepackage{listings} %Gør det muligt at indsætte pæn code
+\usepackage[small,bf,hang]{caption}  %Gør caption bold
+\usepackage{subcaption} % Gør det muligt at lave delfigurer
+\usepackage{dsfont} % giver adgang til\mathds{#} for at lave bb numre
+\usepackage[margin,draft]{fixme} % allows to add fixme notes using \fxnote or \fxwarn
+% TikZ
+\usepackage{tikz} % Bruges til at lave flotte figurer
+\usetikzlibrary{calc} % bruges til at lave nem placering i tikz
+\usepackage{pgfplots} % bruges til plots i TikZ
+\pgfplotsset{compat=1.18}
+
+\usepackage{minted}
+\usemintedstyle{friendly}
+
+
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% Bibliography 
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% Smart quotations
+\usepackage{csquotes}
+
+% URL's
+\usepackage{url}
+
+% Bibliography
+\usepackage[backend=biber,
+  style=apa,              % Citation style as APA
+  sorting=ynt,            % Sort citations as YEAR-NAME-TITLE
+  sortcites=true,
+  dashed=false,
+  uniquelist=false,
+  uniquename=false,
+  doi=false,
+  url=true,
+  isbn=false,
+  eprint=false,
+  hyperref=true]{biblatex}
+
+% Actually apply the citation order (because the bibliography is sorted differently)
+\assignrefcontextentries[]{*}
+
+% Space in bibliography (change to compress/expand bibliography)
+\setlength\bibitemsep{1.3\itemsep}
+
+% Change bib-order
+\DeclareNameAlias{sortname}{family-given}
+
+% 1) Tell biblatex to prefer shortauthor as the label name
+\DeclareLabelname{%
+  \field{shortauthor}
+  \field{author}
+  \field{editor}
+  \field{translator}
+}
+
+% 2) If there *is* a shortauthor, reset APA’s “name printed?” flag so that
+%    the shortauthor form is used even on the first citation.
+\makeatletter
+\AtEveryCitekey{%
+  \ifnameundef{shortauthor}
+    {}
+    {\def\cbx@apa@ifnamesaved{\@firstoftwo}}%
+}
+\makeatother
+
+
+% Load the file with bibliographic information
+\addbibresource{bibliography.bib}
+
+
+\usepackage{refcount}
+\usepackage{varioref}
+\usepackage[
+  unicode=true,
+  pdftitle={Pre-Averaging \& Drift Burst Detection},
+  pdfauthor={Emil Beck Aagaard Korneliussen},  % Change this name!
+  pdfkeywords={Time Series, Applied, Econometrics, Project},
+  bookmarksopen=true,
+  pdfdisplaydoctitle=true,
+  hypertexnames=false]{hyperref}
+
+\usepackage[noabbrev, nameinlink]{cleveref}
+
+% Hyperref setup (from Rasmus Villemoes)
+\makeatletter
+\@ifpackageloaded{hyperref}{
+  \hypersetup{colorlinks=false, pdfborder=0 0 0}
+  \addto\extrasenglish{ % What does this do???
+    \renewcommand\subsectionautorefname{Subsection}%
+    \renewcommand\sectionautorefname{Section}%
+    \renewcommand\chapterautorefname{Chapter}%
+    \renewcommand\equationautorefname{equation}%
+  }
+}{}
+\makeatother
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Begin enviorment setup			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{amsthm}
+
+\usepackage{thmtools}
+\usepackage[many]{tcolorbox}
+\usepackage{etoolbox}
+\makeatletter
+
+\def\renewtheorem#1{%
+  \expandafter\let\csname#1\endcsname\relax
+  \expandafter\let\csname c@#1\endcsname\relax
+  \gdef\renewtheorem@envname{#1}
+  \renewtheorem@secpar
+}
+\def\renewtheorem@secpar{\@ifnextchar[{\renewtheorem@numberedlike}{\renewtheorem@nonumberedlike}}
+\def\renewtheorem@numberedlike[#1]#2{\newtheorem{\renewtheorem@envname}[#1]{#2}}
+\def\renewtheorem@nonumberedlike#1{
+  \def\renewtheorem@caption{#1}
+  \edef\renewtheorem@nowithin{\noexpand\newtheorem{\renewtheorem@envname}{\renewtheorem@caption}}
+  \renewtheorem@thirdpar
+}
+\def\renewtheorem@thirdpar{\@ifnextchar[{\renewtheorem@within}{\renewtheorem@nowithin}}
+\def\renewtheorem@within[#1]{\renewtheorem@nowithin[#1]}
+
+\makeatother
+
+\usepackage[framemethod=TikZ]{mdframed}
+\mdfsetup{skipabove=1em,skipbelow=0em, innertopmargin=12pt, innerbottommargin=8pt}
+
+\tcbuselibrary{skins}
+
+% Color definitions
+
+
+% Dark orange and Dark Red rgb
+\definecolor{theorembordercolor}{RGB}{151, 63, 5}
+\definecolor{theorembackgroundcolor}{RGB}{248, 241, 234}
+
+\definecolor{examplebordercolor}{RGB}{0, 110, 184}
+\definecolor{examplebackgroundcolor}{RGB}{240, 244, 250}
+
+\definecolor{definitionbordercolor}{RGB}{0, 150, 85}
+\definecolor{definitionbackgroundcolor}{RGB}{239, 247, 243}
+
+\definecolor{propertybordercolor}{RGB}{128, 0, 128}
+\definecolor{propertybackgroundcolor}{RGB}{255, 240, 255}
+
+\definecolor{formulabordercolor}{RGB}{0, 0, 0}
+\definecolor{formulabackgroundcolor}{RGB}{230, 229, 245}
+\definecolor{proofcolor}{RGB}{0,0,0}
+
+% macro that will hold the *name* of the colour to use for the next proof
+\newcommand{\lastproofcolor}{proofcolor} % initial value: the name "proofcolor"
+
+
+%%% THEOREM STYLES SETUP %%%
+\newtheoremstyle{theorem} % name of the style to be used
+{0pt} % measure of space to leave above the theorem. E.g.: 3pt
+{0pt} % measure of space to leave below the theorem. E.g.: 3pt
+{\normalfont} % name of font to use in the body of the theorem
+{0pt} % measure of space to indent
+{\bfseries} % name of head font
+{\\} % punctuation between head and body
+{0pt} % space after theorem head; " " = normal interword space
+{{\color{theorembordercolor}\thmname{#1}~\thmnumber{\textup{#2}}~\textup{#3}}} % Header display 
+\newtheoremstyle{theorem*} % name of the style to be used
+{0pt} % measure of space to leave above the theorem. E.g.: 3pt
+{0pt} % measure of space to leave below the theorem. E.g.: 3pt
+{\normalfont} % name of font to use in the body of the theorem
+{0pt} % measure of space to indent
+{\bfseries} % name of head font
+{\\} % punctuation between head and body
+{0pt} % space after theorem head; " " = normal interword space
+{{\color{theorembordercolor}\thmname{#1}~\textup{#3}}} % Header display 
+
+
+\newtheoremstyle{definition} % name of the style to be used
+{0pt} % measure of space to leave above the theorem. E.g.: 3pt
+{0pt} % measure of space to leave below the theorem. E.g.: 3pt
+{\normalfont} % name of font to use in the body of the theorem
+{0pt} % measure of space to indent
+{\bfseries} % name of head font
+{\\} % punctuation between head and body
+{0pt} % space after theorem head; " " = normal interword space
+{{\color{definitionbordercolor}\thmname{#1}~\thmnumber{\textup{#2}}~\textup{#3}}} % Header display 
+\newtheoremstyle{definition*} % name of the style to be used
+{0pt} % measure of space to leave above the theorem. E.g.: 3pt
+{0pt} % measure of space to leave below the theorem. E.g.: 3pt
+{\normalfont} % name of font to use in the body of the theorem
+{0pt} % measure of space to indent
+{\bfseries} % name of head font
+{\\} % punctuation between head and body
+{0pt} % space after theorem head; " " = normal interword space
+{{\color{definitionbordercolor}\thmname{#1}~\textup{#3}}} % Header display 
+
+\newtheoremstyle{example} % name of the style to be used
+{0pt} % measure of space to leave above the theorem. E.g.: 3pt
+{0pt} % measure of space to leave below the theorem. E.g.: 3pt
+{\normalfont} % name of font to use in the body of the theorem
+{0pt} % measure of space to indent
+{\bfseries} % name of head font
+{\\} % punctuation between head and body
+{0pt} % space after theorem head; " " = normal interword space
+{{\color{examplebordercolor}\thmname{#1}~\thmnumber{\textup{#2}}~\textup{#3}}} % Header display 
+\newtheoremstyle{example*} % name of the style to be used
+{0pt} % measure of space to leave above the theorem. E.g.: 3pt
+{0pt} % measure of space to leave below the theorem. E.g.: 3pt
+{\normalfont} % name of font to use in the body of the theorem
+{0pt} % measure of space to indent
+{\bfseries} % name of head font
+{\\} % punctuation between head and body
+{0pt} % space after theorem head; " " = normal interword space
+{{\color{examplebordercolor}\thmname{#1}~\textup{#3}}} % Header display 
+
+\newtheoremstyle{formula} % name of the style to be used
+{0pt} % measure of space to leave above the theorem. E.g.: 3pt
+{0pt} % measure of space to leave below the theorem. E.g.: 3pt
+{\normalfont} % name of font to use in the body of the theorem
+{0pt} % measure of space to indent
+{\bfseries} % name of head font
+{\\} % punctuation between head and body
+{0pt} % space after theorem head; " " = normal interword space
+{{\color{formulabordercolor}\thmname{#1}~\thmnumber{\textup{#2}}~\textup{#3}}} % Header display 
+\newtheoremstyle{formula*} % name of the style to be used
+{0pt} % measure of space to leave above the theorem. E.g.: 3pt
+{0pt} % measure of space to leave below the theorem. E.g.: 3pt
+{\normalfont} % name of font to use in the body of the theorem
+{0pt} % measure of space to indent
+{\bfseries} % name of head font
+{\\} % punctuation between head and body
+{0pt} % space after theorem head; " " = normal interword space
+{{\color{formulabordercolor}\thmname{#1}~\textup{#3}}} % Header display 
+
+
+\newtheoremstyle{example} % name of the style to be used
+{0pt} % measure of space to leave above the theorem. E.g.: 3pt
+{0pt} % measure of space to leave below the theorem. E.g.: 3pt
+{\normalfont} % name of font to use in the body of the theorem
+{0pt} % measure of space to indent
+{\bfseries} % name of head font
+{\\} % punctuation between head and body
+{0pt} % space after theorem head; " " = normal interword space
+{{\color{examplebordercolor}\thmname{#1}~\thmnumber{\textup{#2}}~\textup{#3}}} % Header display 
+\newtheoremstyle{example*} % name of the style to be used
+{0pt} % measure of space to leave above the theorem. E.g.: 3pt
+{0pt} % measure of space to leave below the theorem. E.g.: 3pt
+{\normalfont} % name of font to use in the body of the theorem
+{0pt} % measure of space to indent
+{\bfseries} % name of head font
+{\\} % punctuation between head and body
+{0pt} % space after theorem head; " " = normal interword space
+{{\color{examplebordercolor}\thmname{#1}~\textup{#3}}} % Header display 
+
+\newtheoremstyle{property} % name of the style to be used
+{0pt} % measure of space to leave above the theorem. E.g.: 3pt
+{0pt} % measure of space to leave below the theorem. E.g.: 3pt
+{\normalfont} % name of font to use in the body of the theorem
+{0pt} % measure of space to indent
+{\bfseries} % name of head font
+{\\} % punctuation between head and body
+{0pt} % space after theorem head; " " = normal interword space
+{{\color{propertybordercolor}\thmname{#1}~\thmnumber{\textup{#2}}~\textup{#3}}} % Header display 
+\newtheoremstyle{property*} % name of the style to be used
+{0pt} % measure of space to leave above the theorem. E.g.: 3pt
+{0pt} % measure of space to leave below the theorem. E.g.: 3pt
+{\normalfont} % name of font to use in the body of the theorem
+{0pt} % measure of space to indent
+{\bfseries} % name of head font
+{\\} % punctuation between head and body
+{0pt} % space after theorem head; " " = normal interword space
+{{\color{propertybordercolor}\thmname{#1}~\textup{#3}}} % Header display 
+
+
+\newtheoremstyle{question} % name of the style to be used
+{0pt} % measure of space to leave above the theorem. E.g.: 3pt
+{0pt} % measure of space to leave below the theorem. E.g.: 3pt
+{\normalfont} % name of font to use in the body of the theorem
+{0pt} % measure of space to indent
+{\bfseries} % name of head font
+{\\} % punctuation between head and body
+{0pt} % space after theorem head; " " = normal interword space
+{{\color{formulabordercolor}\thmname{#1}~\textup{#3}}} % Header display 
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+% Theorem Environments 				%
+%%%%%%%%%%%%%%%%%%%%%%%%
+
+\theoremstyle{theorem}
+\newtheorem{theorem}{Theorem}
+\newtheorem{postulate}[theorem]{Postulate}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{conclusion}[theorem]{Conclusion}
+% unnumbered versions
+\theoremstyle{theorem*}
+\newtheorem{theorem*}{Theorem}
+\newtheorem{postulate*}{Postulate}
+\newtheorem{conjecture*}{Conjecture}
+\newtheorem{corollary*}{Corollary}
+\newtheorem{lemma*}{Lemma}
+\newtheorem{conclusion*}{Conclusion}
+
+\tcolorboxenvironment{theorem}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=theorembackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{theorembordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{postulate}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=theorembackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{theorembordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{conjecture}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=theorembackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{theorembordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{lemma}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=theorembackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{theorembordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{conclusion}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=theorembackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{theorembordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{corollary}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=theorembackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{theorembordercolor}, arc=.5mm
+}
+
+\tcolorboxenvironment{theorem*}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=theorembackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{theorembordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{postulate*}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=theorembackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{theorembordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{conjecture*}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=theorembackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{theorembordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{lemma*}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=theorembackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{theorembordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{conclusion*}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=theorembackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{theorembordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{corollary*}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=theorembackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{theorembordercolor}, arc=.5mm
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Definition Environments %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{review}[theorem]{Review}
+
+% Unnumbered version 
+\theoremstyle{definition*}
+\newtheorem{definition*}{Definition}
+\newtheorem{review*}{Review}
+
+
+\tcolorboxenvironment{definition}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=definitionbackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{definitionbordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{review}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=definitionbackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{definitionbordercolor}, arc=.5mm
+}
+
+\tcolorboxenvironment{definition*}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=definitionbackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{definitionbordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{review*}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=definitionbackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{definitionbordercolor}, arc=.5mm
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+% Example Environments 			%
+%%%%%%%%%%%%%%%%%%%%%%%%
+
+\theoremstyle{example}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{note}[theorem]{Note}
+\newtheorem{claim}[theorem]{Claim}
+\newtheorem{fact}[theorem]{Fact}
+
+\theoremstyle{example*}
+\newtheorem{example*}{Example}
+\newtheorem{remark*}{Remark}
+\newtheorem{note*}{Note}
+\newtheorem{claim*}{Claim}
+\newtheorem{fact*}{Fact}
+
+\tcolorboxenvironment{example}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=examplebackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{examplebordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{remark}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=white, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{examplebordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{note}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=white, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{examplebordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{claim}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=white, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{examplebordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{fact}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=examplebackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{examplebordercolor}, arc=.5mm
+}
+
+\tcolorboxenvironment{example*}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=examplebackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{examplebordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{remark*}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=white, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{examplebordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{note*}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=white, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{examplebordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{claim*}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=white, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{examplebordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{fact*}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=examplebackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{examplebordercolor}, arc=.5mm
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+% Property Environments 					%
+%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\theoremstyle{property}
+\newtheorem{property}[theorem]{Property}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{result}[theorem]{Result}
+
+\theoremstyle{property*}
+\newtheorem{property*}{Property}
+\newtheorem{proposition*}{Proposition}
+\newtheorem{result*}{Result}
+
+
+\tcolorboxenvironment{property}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=propertybackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{propertybordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{proposition}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=propertybackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{propertybordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{result}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=propertybackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{propertybordercolor}, arc=.5mm
+}
+
+\tcolorboxenvironment{property*}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=propertybackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{propertybordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{proposition*}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=propertybackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{propertybordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{result*}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=propertybackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{propertybordercolor}, arc=.5mm
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+% Formula Enviorments		%
+%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\theoremstyle{formula}
+\newtheorem{formula}[theorem]{Formula}
+
+\theoremstyle{formula*}
+\newtheorem{formula*}{Formula}
+
+
+\tcolorboxenvironment{formula}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=formulabackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{formulabordercolor}, arc=.5mm
+}
+
+\tcolorboxenvironment{formula*}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=formulabackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{formulabordercolor}, arc=.5mm
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Question Enviorments 		%  (Unnumbered enviorments)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\theoremstyle{question}
+\newtheorem*{question}{Question}
+\newtheorem*{assigment}{Assignment}
+\newtheorem*{exercise}{Exercise}
+
+\tcolorboxenvironment{question}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=formulabackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{formulabordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{assigment}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=formulabackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{formulabordercolor}, arc=.5mm
+}
+\tcolorboxenvironment{exercise}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=formulabackgroundcolor, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{formulabordercolor}, arc=.5mm
+}
+
+%%%%%%%%%%%%%%%%%%%%%
+% Proof Enviorment	%
+%%%%%%%%%%%%%%%%%%%%%
+
+% proof box: use \lastproofcolor for border and for the body font
+\newtheoremstyle{proof} % name of the style to be used
+{0pt} % measure of space to leave above the theorem. E.g.: 3pt
+{0pt} % measure of space to leave below the theorem. E.g.: 3pt
+{\normalfont} % name of font to use in the body of the theorem
+{0pt} % measure of space to indent
+{\bfseries} % name of head font
+{\\} % punctuation between head and body
+{0pt} % space after theorem head; " " = normal interword space
+{{\color{\lastproofcolor}\thmname{#1}~\textup{#3}}} % Header display
+
+% These patches must be placed after \tcolorboxenvironment !
+%% Change color of proof to match prev enviorment.
+\AtEndEnvironment{theorem}{\global\def\lastproofcolor{theorembordercolor}}
+\AtEndEnvironment{postulate}{\global\def\lastproofcolor{theorembordercolor}}
+\AtEndEnvironment{conjecture}{\global\def\lastproofcolor{theorembordercolor}}
+\AtEndEnvironment{corollary}{\global\def\lastproofcolor{theorembordercolor}}
+\AtEndEnvironment{lemma}{\global\def\lastproofcolor{theorembordercolor}}
+\AtEndEnvironment{conclusion}{\global\def\lastproofcolor{theorembordercolor}}
+
+\AtEndEnvironment{theorem*}{\global\def\lastproofcolor{theorembordercolor}}
+\AtEndEnvironment{postulate*}{\global\def\lastproofcolor{theorembordercolor}}
+\AtEndEnvironment{conjecture*}{\global\def\lastproofcolor{theorembordercolor}}
+\AtEndEnvironment{corollary*}{\global\def\lastproofcolor{theorembordercolor}}
+\AtEndEnvironment{lemma*}{\global\def\lastproofcolor{theorembordercolor}}
+\AtEndEnvironment{conclusion*}{\global\def\lastproofcolor{theorembordercolor}}
+
+\AtEndEnvironment{definition}{\global\def\lastproofcolor{definitionbordercolor}}
+\AtEndEnvironment{review}{\global\def\lastproofcolor{definitionbordercolor}}
+
+\AtEndEnvironment{definition*}{\global\def\lastproofcolor{definitionbordercolor}}
+\AtEndEnvironment{review*}{\global\def\lastproofcolor{definitionbordercolor}}
+
+\AtEndEnvironment{example}{\global\def\lastproofcolor{examplebordercolor}}
+\AtEndEnvironment{remark}{\global\def\lastproofcolor{examplebordercolor}}
+\AtEndEnvironment{note}{\global\def\lastproofcolor{examplebordercolor}}
+\AtEndEnvironment{claim}{\global\def\lastproofcolor{examplebordercolor}}
+\AtEndEnvironment{fact}{\global\def\lastproofcolor{examplebordercolor}}
+
+
+\AtEndEnvironment{example*}{\global\def\lastproofcolor{examplebordercolor}}
+\AtEndEnvironment{remark*}{\global\def\lastproofcolor{examplebordercolor}}
+\AtEndEnvironment{note*}{\global\def\lastproofcolor{examplebordercolor}}
+\AtEndEnvironment{claim*}{\global\def\lastproofcolor{examplebordercolor}}
+\AtEndEnvironment{fact*}{\global\def\lastproofcolor{examplebordercolor}}
+
+
+\AtEndEnvironment{property}{\global\def\lastproofcolor{propertybordercolor}}
+\AtEndEnvironment{proposition}{\global\def\lastproofcolor{propertybordercolor}}
+\AtEndEnvironment{result}{\global\def\lastproofcolor{propertybordercolor}}
+
+\AtEndEnvironment{property*}{\global\def\lastproofcolor{propertybordercolor}}
+\AtEndEnvironment{proposition*}{\global\def\lastproofcolor{propertybordercolor}}
+\AtEndEnvironment{result*}{\global\def\lastproofcolor{propertybordercolor}}
+
+\AtEndEnvironment{formula}{\global\def\lastproofcolor{formulabordercolor}}
+\AtEndEnvironment{question}{\global\def\lastproofcolor{formulabordercolor}}
+\AtEndEnvironment{assigment}{\global\def\lastproofcolor{formulabordercolor}}
+\AtEndEnvironment{exercise}{\global\def\lastproofcolor{formulabordercolor}}
+
+\AtEndEnvironment{formula*}{\global\def\lastproofcolor{formulabordercolor}}
+\AtEndEnvironment{question*}{\global\def\lastproofcolor{formulabordercolor}}
+\AtEndEnvironment{assigment*}{\global\def\lastproofcolor{formulabordercolor}}
+\AtEndEnvironment{exercise*}{\global\def\lastproofcolor{formulabordercolor}}
+
+
+\renewcommand{\qedsymbol}{Q.E.D.}
+\let\qedsymbolMyOriginal\qedsymbol
+\renewcommand{\qedsymbol}{
+  \color{\lastproofcolor}\qedsymbolMyOriginal
+}
+
+
+\theoremstyle{proof}
+\renewtheorem{proof}{Proof}
+
+\tcolorboxenvironment{proof}{
+  enhanced jigsaw, pad at break*=1mm, breakable,
+  left=4mm, right=4mm, top=1mm, bottom=1mm,
+  colback=white, boxrule=0pt, frame hidden,
+  borderline west={0.5mm}{0mm}{\lastproofcolor}, arc=.5mm
+}
+
+
+% Inline Fixme inside custom theorems to fix error.
+\AtBeginEnvironment{proof}{\fxsetup{layout=inline}}
+\AtEndEnvironment{proof}{\fxsetup{layout=margin}}
+
+\AtBeginEnvironment{theorem}{\fxsetup{layout=inline}}
+\AtEndEnvironment{theorem}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{postulate}{\fxsetup{layout=inline}}
+\AtEndEnvironment{postulate}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{conjecture}{\fxsetup{layout=inline}}
+\AtEndEnvironment{conjecture}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{corollary}{\fxsetup{layout=inline}}
+\AtEndEnvironment{corollary}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{lemma}{\fxsetup{layout=inline}}
+\AtEndEnvironment{lemma}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{conclusion}{\fxsetup{layout=inline}}
+\AtEndEnvironment{conclusion}{\fxsetup{layout=margin}}
+
+\AtBeginEnvironment{theorem*}{\fxsetup{layout=inline}}
+\AtEndEnvironment{theorem*}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{postulate*}{\fxsetup{layout=inline}}
+\AtEndEnvironment{postulate*}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{conjecture*}{\fxsetup{layout=inline}}
+\AtEndEnvironment{conjecture*}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{corollary*}{\fxsetup{layout=inline}}
+\AtEndEnvironment{corollary*}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{lemma*}{\fxsetup{layout=inline}}
+\AtEndEnvironment{lemma*}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{conclusion*}{\fxsetup{layout=inline}}
+\AtEndEnvironment{conclusion*}{\fxsetup{layout=margin}}
+
+\AtBeginEnvironment{definition}{\fxsetup{layout=inline}}
+\AtEndEnvironment{definition}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{review}{\fxsetup{layout=inline}}
+\AtEndEnvironment{review}{\fxsetup{layout=margin}}
+
+\AtBeginEnvironment{definition*}{\fxsetup{layout=inline}}
+\AtEndEnvironment{definition*}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{review*}{\fxsetup{layout=inline}}
+\AtEndEnvironment{review*}{\fxsetup{layout=margin}}
+
+\AtBeginEnvironment{example}{\fxsetup{layout=inline}}
+\AtEndEnvironment{example}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{remark}{\fxsetup{layout=inline}}
+\AtEndEnvironment{remark}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{note}{\fxsetup{layout=inline}}
+\AtEndEnvironment{note}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{claim}{\fxsetup{layout=inline}}
+\AtEndEnvironment{claim}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{fact}{\fxsetup{layout=inline}}
+\AtEndEnvironment{fact}{\fxsetup{layout=margin}}
+
+\AtBeginEnvironment{example*}{\fxsetup{layout=inline}}
+\AtEndEnvironment{example*}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{remark*}{\fxsetup{layout=inline}}
+\AtEndEnvironment{remark*}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{note*}{\fxsetup{layout=inline}}
+\AtEndEnvironment{note*}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{claim*}{\fxsetup{layout=inline}}
+\AtEndEnvironment{claim*}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{fact*}{\fxsetup{layout=inline}}
+\AtEndEnvironment{fact*}{\fxsetup{layout=margin}}
+
+\AtBeginEnvironment{example*}{\fxsetup{layout=inline}}
+\AtEndEnvironment{example*}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{remark*}{\fxsetup{layout=inline}}
+\AtEndEnvironment{remark*}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{note*}{\fxsetup{layout=inline}}
+\AtEndEnvironment{note*}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{claim*}{\fxsetup{layout=inline}}
+\AtEndEnvironment{claim*}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{fact*}{\fxsetup{layout=inline}}
+\AtEndEnvironment{fact*}{\fxsetup{layout=margin}}
+
+\AtBeginEnvironment{property}{\fxsetup{layout=inline}}
+\AtEndEnvironment{property}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{proposition}{\fxsetup{layout=inline}}
+\AtEndEnvironment{proposition}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{result}{\fxsetup{layout=inline}}
+\AtEndEnvironment{result}{\fxsetup{layout=margin}}
+
+\AtBeginEnvironment{formula}{\fxsetup{layout=inline}}
+\AtEndEnvironment{formula}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{question}{\fxsetup{layout=inline}}
+\AtEndEnvironment{question}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{assigment}{\fxsetup{layout=inline}}
+\AtEndEnvironment{assigment}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{exercise}{\fxsetup{layout=inline}}
+\AtEndEnvironment{exercise}{\fxsetup{layout=margin}}
+
+\AtBeginEnvironment{formula*}{\fxsetup{layout=inline}}
+\AtEndEnvironment{formula*}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{question*}{\fxsetup{layout=inline}}
+\AtEndEnvironment{question*}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{assigment*}{\fxsetup{layout=inline}}
+\AtEndEnvironment{assigment*}{\fxsetup{layout=margin}}
+\AtBeginEnvironment{exercise*}{\fxsetup{layout=inline}}
+\AtEndEnvironment{exercise*}{\fxsetup{layout=margin}}
+
+
+% Make numbering follow the chapter.
+\numberwithin{equation}{chapter}
+\numberwithin{figure}{chapter}
+\numberwithin{table}{chapter}
+
+\numberwithin{theorem}{chapter}
+\numberwithin{postulate}{chapter}
+\numberwithin{conjecture}{chapter}
+\numberwithin{corollary}{chapter}
+\numberwithin{lemma}{chapter}
+\numberwithin{conclusion}{chapter}
+\numberwithin{definition}{chapter}
+\numberwithin{review}{chapter}
+\numberwithin{example}{chapter}
+\numberwithin{note}{chapter}
+\numberwithin{claim}{chapter}
+\numberwithin{fact}{chapter}
+\numberwithin{property}{chapter}
+\numberwithin{proposition}{chapter}
+\numberwithin{result}{chapter}
+\numberwithin{formula}{chapter}
+
+% Setup cleverref to custom enviorments
+\crefname{postulate}{Postulate}{Postulates}
+\crefname{conjecture}{Conjecture}{Conjectures}
+\crefname{corollary}{Corollary}{Corollaries}
+\crefname{lemma}{Lemma}{Lemmas}
+\crefname{conclusion}{Conclusion}{Conclusions}
+\crefname{definition}{Definition}{Definitions}
+\crefname{review}{Review}{Reviews}
+\crefname{example}{Example}{Examples}
+\crefname{note}{Note}{Notes}
+\crefname{claim}{Claim}{Claims}
+\crefname{fact}{Fact}{Facts}
+\crefname{property}{Property}{Properties}
+\crefname{proposition}{Proposition}{Propositions}
+\crefname{formula}{Formula}{Formulas}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+% Header & Footer setup %
+%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+% LE: left even
+% RO: right odd
+% CE, CO: center even, center odd
+% My name for when I print my lecture notes to use for an open book exam.
+% \fancyhead[LE,RO]{Gilles Castel}
+
+\fancyhead[R]{\thetitle} % Right odd,  Left even
+\fancyhead[L]{\theauthor}          % Right even, Left odd
+
+\fancyfoot[R]{Page \thepage{} of {}\thelastpage}  % Right odd,  Left even
+\fancyfoot[L]{\textit{ \nouppercase{\leftmark}}}          % Right even, Left odd
+\fancyfoot[C]{}     % Center
+
+\makeatother
+
+%%%%%%%%%%%%%%%%%%%%
+% Custom commands	 %
+%%%%%%%%%%%%%%%%%%%%
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\V}{\mathbb{V}}
+\renewcommand{\P}{\mathbb{P}}
+
+\newcommand{\B}{\mathcal{B}}
+\newcommand{\M}{\mathcal{M}}
+\renewcommand{\L}{\mathcal{L}}
+\newcommand{\F}{\mathcal{F}}
+\newcommand{\T}{\mathcal{T}}
+\renewcommand{\H}{\mathcal{H}}
+\renewcommand{\S}{\mathcal{S}}
+
+\newcommand{\X}{\mathfrak{X}}
+\newcommand{\Y}{\mathfrak{Y}}
+
+\newcommand{\powerset}{\mathcal{P}}
+
+\newcommand\nulvec{\bm{0}}
+\newcommand\nulmat{\bm{O}}
+\newcommand{\what}[1]{\widehat{#1}}
+\DeclareMathOperator{\sign}{sign}
+\DeclareMathOperator{\sgn}{sign}
+\DeclareMathOperator{\re}{Re}
+\DeclareMathOperator{\im}{Im}
+\DeclareMathOperator{\cov}{Cov}
+\DeclareMathOperator{\var}{VaR}
+\DeclareMathOperator{\es}{ES}
+\newcommand{\1}{\mathds{1}}
+\renewcommand{\d}{\text{ d}}
+\newcommand{\ee}{\text{e}}
+\newcommand{\ii}{\text{i}}
+
+% Put x \to \infty below \lim
+\let\svlim\lim\def\lim{\svlim\limits}
+\let\supup\sup
+\let\infup\inf
+\let\svsup\sup\def\sup{\svsup\limits}
+\let\svinf\inf\def\inf{\svinf\limits}
+
+%Make implies and impliedby shorter
+\let\implies\Rightarrow
+\let\impliedby\Leftarrow
+\let\iff\Leftrightarrow
+
+% switch commands for epsilon
+\let\temp\epsilon
+\let\epsilon\varepsilon
+\let\varepsilon\temp
+
+%Switch commands for phi
+% \let\temp\phi
+% \let\phi\varphi
+% \let\varphi\temp
+%
+
+% Define norm and abs to be height adjusted
+\DeclarePairedDelimiter\abs{\lvert}{\rvert}%
+\DeclarePairedDelimiter\norm{\lVert}{\rVert}%
+\DeclarePairedDelimiter\ceil{\lceil}{\rceil}
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+
+
+% Swap the definition of \abs* and \norm*, so that \abs
+% and \norm resizes the size of the brackets, and the 
+% starred version does not.
+\makeatletter
+\let\oldabs\abs
+\def\abs{\@ifstar{\oldabs}{\oldabs*}}
+%
+\let\oldnorm\norm
+\def\norm{\@ifstar{\oldnorm}{\oldnorm*}}
+\makeatother
+
+\makeatletter
+\let\oldfloor\floor
+\def\floor{\@ifstar{\oldfloor}{\oldfloor*}}
+
+\makeatletter
+\let\oldceil\ceil
+\def\ceil{\@ifstar{\oldceil}{\ceil*}}
+
+
+% Add \contra symbol to denote contradiction
+\usepackage{stmaryrd} % for \lightning
+\newcommand\contra{\scalebox{1.5}{$\lightning$}}
+
+
+% Add independent symbol
+\newcommand\independent{\protect\mathpalette{\protect\independenT}{\perp}}
+\def\independenT#1#2{\mathrel{\rlap{$#1#2$}\mkern3mu{#1#2}}}
+
+\newcommand{\indp}{\independent}
+
+% Multiple abstracts (dirty hack?)
+\newenvironment{multiabstract}[1]
+{\renewcommand{\abstractname}{#1}\begin{abstract}}
+{\end{abstract}}
+

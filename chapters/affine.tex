@@ -1,0 +1,89 @@
+\chapter{Affine Models, its Extended Transform \& Fourier Pricing}
+\label{ch:affine}
+
+In this chapter we introduce the Affine-Jump-Diffusion model (AJD), for this purpose we follow
+\parencite{Duffie2000}, who were the first to synthesize the litterature in the area. 
+
+
+
+Consider a filtered probability space $(\Omega, \F, (\F_t)_{t \ge 0}, \P)$ satisfying the usual
+conditions. Suppose $X = (X_t)_{t\ge 0}$ is a $n$-dimensional Markov process,  with respect to
+$(\F_t)_{t\ge 0}$ with state space $D \subset \R^{n}$. Suppose $X$ solves the stochastic
+differential equation (SDE):
+\[ 
+\d X_t = \mu(X_t) \d t + \sigma (X_t) \d W_t + \d Z_t
+,\]
+where $W = (W_{t})_{t\ge 0}$ is a standard $\F_t$-Brownian motion (BM), $\mu : D \to \R^{n}$,
+$\sigma : D \to \R^{n \times n}$ and $Z = (Z_t)_{t\ge 0}$ is a pure jump process with fixed jump
+distribution $\nu$ on $\R^{n}$ and arrival intensity $\lambda = (\lambda(X_t))_{\ge 0}$, for some
+$\lambda: D \to \R_{\ge 0}$.
+
+Assume that $X_0$ is \emph{known}\footnote{In the sense that its distribution is degenerate at a
+known value $x_0$, i.e., $\P(X_0 \in A) = \delta_{x_0}(A)$ for any measurable set $A$, where
+$\delta_{x_0}$ denotes the Dirac measure at $x_0$.}.
+Let $R: D \to \R$ denote the short rate. The AJD model assumes that $\mu$, $\sigma \sigma^{\top }$,
+$\lambda$ and $R$ are affine with their dependence determined by the coefficients $(K, H, l, \rho)$
+defined by
+\begin{itemize}
+\item $\mu(x) = K_0 + K_1 x$, for $K = (K_0, K_1) \in \R^{n}\times \R^{n \times n}$.  
+\item $(\sigma(x) \sigma(x)^{\top })_{ij} = (H_0)_{ij} + (H_1)_{ij} \cdot x$,  
+  for $H = (H_0, H_1) \in\R^{n \times  n} \times  \R^{n \times  n \times  n}$.
+\item $\lambda(x) = l_0 + l_1 \cdot  x$, for $l = (l_0, l_1) \in \R \times  \R^{n}$.
+\item $R(x) = \rho_0 + \rho_1\cdot x$, for $\rho = (\rho_0, \rho_1) \in \R \times \R^{n}$.
+\end{itemize}
+Furthermore, for $c \in \C^{n}$ we define the \emph{jump transform} by $\theta(c) = \int_{\R^{n}}
+\ee^{c \cdot z}\d \nu(z)$ whenever this integral is well defined. The jump transform determines the
+distribution of the jump-sizes. Indeed, for any $u \in \R^n$, set $c = iu$ then 
+\[
+  \theta(iu)
+  = \int_{\R^n} \ee^{iu \cdot z} \d\nu(z)
+  = \phi_\nu(u),
+\]
+where $\phi_\nu$ denotes the characteristic function of $\nu$. Since a probability measure is
+uniquely determined by its characteristic function, the jump transform uniquely determines $\nu$.
+
+A \emph{characteristic} is a tuple containing the coefficients of $X$ as well as the short rate $R$,
+that is, $\chi = (K, H, l, \theta, \rho)$. Given an initial condition $X_0$ a characteristic
+completely determines the distribution of $X$ as well as the effects of discounting. Thus, $\chi$
+also specifies a transform (when well defined) of $X_T$ conditional of $\F_t$ for $t \le T$ given
+by:
+\begin{align*} 
+  \psi^{\chi}: \C^{n} \times D \times  \R_{\ge 0} \times  \R_{\ge 0} &\to  \C,\\
+  (u, X_t, t, T) &\mapsto  \E^{\chi}_t\left[ \ee^{-\int_{t}^{T} R(X_s) \d s}\ee^{u \cdot X_T} \right]
+.\end{align*}
+Where $\E^{\chi}_t = \E^{\chi}[\cdot \mid \F_t]$ denotes the expectation under the distribution of
+$X$ determined by $\chi$ conditional on $\F_t$. We now prove the following result, which is also
+shown in \parencite{Duffie2000}:
+\begin{theorem}
+  Assume the characteristic $\chi$ is \emph{well-behaved} at $(u,T) \in \C^{n} \times \R_{\ge 0}$
+  as defined in Definition 1 in \parencite{Duffie2000}. 
+  Then,
+  \[ 
+    \psi^{X}(u, x, t, T) = \E_{t}^{\chi}\left[ \ee^{\int_{t}^{T} R(X_s) \d s} \ee^{u \cdot X_T} \mid
+    X_t = x\right] = \ee^{\alpha(t) + \beta(t) \cdot x}
+  ,\]
+ where $\alpha$ and $\beta$ are the (unique) solutions to the complex-valued ODEs:
+  \begin{align*} 
+    \frac{\partial \beta}{\partial t} (t) &= \rho_1 + K_1^{\top }\beta(t) - \frac{1}{2} H_1 \beta(t)
+    - l_1 (\theta(\beta(t)) - 1)\\
+    \frac{\partial \alpha}{\partial t} (t) &=  \rho_0 - K_0 \cdot \beta(t) - \frac{1}{2}
+    \beta(t)^{\top }H_0 \beta(t) - l_0(\theta(\beta(t)) -1)
+  ,\end{align*}
+  with boundary conditions $\beta(T) = u$ and $\alpha(T) = 0$.
+\end{theorem}
+\begin{proof}
+
+\qed
+\end{proof}
+This result is very nice because besides some regularity conditions we now have an explicit way of
+finding the extended transform of $\psi^{\chi}$. The as mentioned in \Cref{ch:intro} the extended
+transform serves multiple use-cases. In particular, the characteristic function of any
+(\emph{well-behaved}) ADJ model is now obtainable, either in closed form or through numerical
+estimation. 
+
+\section{Fourier Pricing}
+\label{sec:fourier}
+
+
+
+
