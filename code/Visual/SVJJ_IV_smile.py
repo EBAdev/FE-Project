@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
 from data_handler import load_data
 from Fourier import PRICERS
 from Models.SVJJ import PARAMETER_NAMES, SVJJModel
@@ -13,6 +12,7 @@ from option_pricing import implied_call_price, implied_volatility_call
 
 PARAMETER_FILE = "calibrated_svjj_parameters.csv"
 METHOD = "lewis"
+V0 = (13 / 100) ** 2  # 0.0169
 
 
 NUM_STRIKES = 100
@@ -132,7 +132,7 @@ def calculate_market_iv(market_data, S0, q, r):
         price = float(row["Mid"])
 
         if row["cp_flag"] == "P":
-            price = implied_call_price(price_underlying=S0, P=price, K=K, T=T, r=r, q=q)
+            price = implied_call_price(S0, P=price, K=K, T=T, r=r, q=q)
 
         iv = implied_volatility_call(
             price,
@@ -182,10 +182,10 @@ def calculate_model_smile(
 
     model = create_model(params, r, q)
 
-    Xt = np.array(
+    Yt = np.array(
         [
             np.log(S0),
-            params[-1],
+            V0,
         ]
     )
 
@@ -195,7 +195,7 @@ def calculate_model_smile(
         S0,
         strikes,
         T,
-        Xt,
+        Yt,
     )
 
     implied_vols = np.array(

@@ -73,11 +73,7 @@ def create_model(params, r, q):
 
     parameters = dict(zip(PARAMETER_NAMES, params))
 
-    return SVJJModel(
-        r=r,
-        q=q,
-        **parameters,
-    )
+    return SVJJModel(r=r, q=q, **parameters)
 
 
 def price_options(params, groups, price_underlying, q):
@@ -90,13 +86,13 @@ def price_options(params, groups, price_underlying, q):
     n = sum(len(g["idx"]) for g in groups)
     prices = np.empty(n)
 
+    # The state vector is (Y_t, V_t) where Y_t = log(S_t) and V_t the variance process.
+    Yt = np.array([np.log(price_underlying), V0])
     for g in groups:
         r = g["r"]
         tau = g["tau"]
         K = g["K"]
         model = create_model(params, r, q)
-        # The state vector is (log(S), V) where V is the variance process.
-        Yt = np.array([np.log(price_underlying), V0])
 
         calls = PRICERS[METHOD](model, price_underlying, K, tau, Yt)
         puts = PRICERS["put_call_parity"](calls, price_underlying, K, tau, r, q)
@@ -147,8 +143,9 @@ def calibration_residuals(
     groups=None,
 ):
     """
-    Return price residuals (model price - market mid price), scaled by
-    max(market price, PRICE_FLOOR) so cheap and expensive options both count.
+    Return scaled price residuals:
+        (model price - market mid) / max(market mid, PRICE_FLOOR)
+    This ensures cheap and expensive options are weighted equally in the calibration objective.
     """
 
     if groups is None:
