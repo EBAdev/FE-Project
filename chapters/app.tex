@@ -1,0 +1,138 @@
+\chapter{Proof of Theorem 2.1}
+\label{app:proof-of-ex-transform}
+
+\begin{proof}
+  Following \parencite{Duffie2000}, we show that the process
+  \[
+    \Psi_t =
+    \ee^{-\int_0^t R(X_s)\d s}
+    \ee^{\alpha(t)+\beta(t)^\top X_t}
+  \]
+  is a martingale. The desired result then follows from its
+  terminal value.
+
+  To apply It\^o's formula, let $N(\d t,\d z)$ denote the
+  integer-valued random measure associated with the jumps of $X$,
+  with compensator $\lambda(X_{t-})\nu(\d z)\d t$, and define
+  \[
+    \widetilde N(\d t,\d z)
+    =N(\d t,\d z)-\lambda(X_{t-})\nu(\d z)\d t.
+  \]
+  For a sufficiently smooth function $f:[0,T]\times D\to\C$,
+  It\^o's formula for jump diffusions gives
+  \begin{align*}
+    \d f(t,X_t)
+    ={}&
+    \Bigg[
+      \frac{\partial f}{\partial t}
+      +\nabla f^\top\mu
+      +\frac{1}{2}\mathrm{Tr}\left(
+        \sigma\sigma^\top\nabla^2 f
+      \right)\\
+      &+\lambda(X_{t-})\int_{\R^n}
+      \left(f(t,X_{t-}+z)-f(t,X_{t-})\right)
+      \nu(\d z)
+    \Bigg]\d t\\
+    &+\nabla f^\top\sigma\d W_t\\
+    &+\int_{\R^n}
+      \left(f(t,X_{t-}+z)-f(t,X_{t-})\right)
+      \widetilde N(\d t,\d z),
+  \end{align*}
+  where the derivatives and coefficients in the drift and diffusion
+  terms are evaluated at $(t,X_{t-})$ and $X_{t-}$, respectively.
+
+  Applying this formula to
+  \[
+    f(t,x)=\ee^{\alpha(t)+\beta(t)^\top x},
+  \]
+  we have
+  \begin{align*}
+    \frac{\partial f}{\partial t}
+    &=f(t,x)(\alpha'(t)+\beta'(t)^\top x),\\
+    \nabla f&=f(t,x)\beta(t),\\
+    \nabla^2 f&=f(t,x)\beta(t)\beta(t)^\top,\\
+    f(t,x+z)-f(t,x)
+    &=f(t,x)(\ee^{\beta(t)^\top z}-1).
+  \end{align*}
+  In particular, the jump contribution satisfies
+  \[
+    \int_{\R^n}(f(t,x+z)-f(t,x))\nu(\d z)
+    =f(t,x)(\theta(\beta(t))-1).
+  \]
+
+  Since the discount factor
+  $\ee^{-\int_0^t R(X_s)\d s}$ is continuous and of finite
+  variation, the product rule yields
+  \begin{align*}
+    \d\Psi_t
+    ={}&\Psi_{t-}\Bigg[
+      \alpha'(t)+\beta'(t)^\top X_{t-}
+      +\beta(t)^\top\mu(X_{t-})\\
+      &+\frac{1}{2}\beta(t)^\top
+      \sigma(X_{t-})\sigma(X_{t-})^\top\beta(t)
+      -R(X_{t-})\\
+      &+\lambda(X_{t-})(\theta(\beta(t))-1)
+    \Bigg]\d t\\
+    &+\eta_t\d W_t
+    +\int_{\R^n}\Psi_{t-}
+      (\ee^{\beta(t)^\top z}-1)
+      \widetilde N(\d t,\d z),
+  \end{align*}
+  where
+  \[
+    \eta_t=\Psi_{t-}\beta(t)^\top\sigma(X_{t-}).
+  \]
+
+  By substituting the affine specifications of $\mu$,
+  $\sigma\sigma^\top$, $\lambda$ and $R$, the drift coefficient
+  becomes
+  \begin{align*}
+    &\alpha'(t)+K_0^\top\beta(t)
+      +\frac{1}{2}\beta(t)^\top H_0\beta(t)
+      -\rho_0+l_0(\theta(\beta(t))-1)\\
+    &\quad+
+    \left[
+      \beta'(t)+K_1^\top\beta(t)
+      +\frac{1}{2}H_1\beta(t)
+      -\rho_1+l_1(\theta(\beta(t))-1)
+    \right]^\top X_{t-}.
+  \end{align*}
+  By the ODEs for $\alpha$ and $\beta$, this expression vanishes.
+  Consequently,
+  \[
+    \d\Psi_t
+    =\eta_t\d W_t+
+    \int_{\R^n}\Psi_{t-}
+    (\ee^{\beta(t)^\top z}-1)\widetilde N(\d t,\d z),
+  \]
+  and hence $\Psi$ is a local martingale.
+
+  By the well-behavedness assumption, the integrability conditions
+  required for the stochastic integrals to be true martingales
+  are satisfied. We refer to Definition 1 and Lemma 1 in Appendix A
+  of \parencite{Duffie2000} for the precise conditions. Thus,
+  $\Psi$ is a martingale.
+
+  Finally, using the terminal conditions $\alpha(T)=0$ and
+  $\beta(T)=u$, we obtain
+  \[
+    \Psi_T=
+    \ee^{-\int_0^T R(X_s)\d s}\ee^{u^\top X_T}.
+  \]
+  Hence, for $t\leq T$,
+  \begin{align*}
+    &\E\left[
+      \ee^{-\int_0^T R(X_s)\d s}\ee^{u^\top X_T}
+      \,\middle|\,\F_t
+    \right]\\
+    &\qquad=\Psi_t
+    =\ee^{-\int_0^t R(X_s)\d s}
+      \ee^{\alpha(t)+\beta(t)^\top X_t}.
+  \end{align*}
+  Multiplying by $\ee^{\int_0^t R(X_s)\d s}$ gives
+  \[
+    \psi^\chi(u,X_t,t,T)
+    =\ee^{\alpha(t)+\beta(t)^\top X_t},
+  \]
+  which establishes the result.
+\end{proof}

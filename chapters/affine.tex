@@ -1,15 +1,13 @@
-\chapter{Affine Models, its Extended Transform \& Fourier Pricing}
+\chapter{AJD-models, the Extended Transform \& Fourier Pricing}
 \label{ch:affine}
 
-In this chapter we introduce the Affine-Jump-Diffusion model (AJD), for this purpose we follow
-\parencite{Duffie2000}, who were the first to synthesize the litterature in the area. 
-
-
+In this chapter we introduce the affine-jump-diffusion (AJD) model, for this purpose we follow
+\parencite{Duffie2000}, which provides a general framework for the transform analysis of affine
+jump-diffusions.
 
 Consider a filtered probability space $(\Omega, \F, (\F_t)_{t \ge 0}, \P)$ satisfying the usual
-conditions. Suppose $X = (X_t)_{t\ge 0}$ is a $n$-dimensional Markov process,  with respect to
-$(\F_t)_{t\ge 0}$ with state space $D \subset \R^{n}$. Suppose $X$ solves the stochastic
-differential equation (SDE):
+conditions. Suppose $X = (X_t)_{t\ge 0}$ is an $n$-dimensional $\F_t$-Markov process with state
+space $D \subset \R^{n}$. Suppose $X$ solves the stochastic differential equation (SDE):
 \[ 
 \d X_t = \mu(X_t) \d t + \sigma (X_t) \d W_t + \d Z_t
 ,\]
@@ -18,9 +16,7 @@ $\sigma : D \to \R^{n \times n}$ and $Z = (Z_t)_{t\ge 0}$ is a pure jump process
 distribution $\nu$ on $\R^{n}$ and arrival intensity $\lambda = (\lambda(X_t))_{\ge 0}$, for some
 $\lambda: D \to \R_{\ge 0}$.
 
-Assume that $X_0$ is \emph{known}\footnote{In the sense that its distribution is degenerate at a
-known value $x_0$, i.e., $\P(X_0 \in A) = \delta_{x_0}(A)$ for any measurable set $A$, where
-$\delta_{x_0}$ denotes the Dirac measure at $x_0$.}.
+Assume that $X_0$ is \emph{known}\footnote{In the sense that its distribution is degenerate at a known value $x_0$, i.e. $X_0=x_0$ is deterministic and known.}.
 Let $R: D \to \R$ denote the short rate. The AJD model assumes that $\mu$, $\sigma \sigma^{\top }$,
 $\lambda$ and $R$ are affine with their dependence determined by the coefficients $(K, H, l, \rho)$
 defined by
@@ -31,8 +27,18 @@ defined by
 \item $\lambda(x) = l_0 + l_1 \cdot  x$, for $l = (l_0, l_1) \in \R \times  \R^{n}$.
 \item $R(x) = \rho_0 + \rho_1\cdot x$, for $\rho = (\rho_0, \rho_1) \in \R \times \R^{n}$.
 \end{itemize}
-Furthermore, for $c \in \C^{n}$ we define the \emph{jump transform} by $\theta(c) = \int_{\R^{n}}
-\ee^{c \cdot z}\d \nu(z)$ whenever this integral is well defined. The jump transform determines the
+\begin{note}[(Model admissability)]
+    Note that not every combination of affine coefficients produces a valid process on $D$. 
+    For instance, the diffusion covariance must remain positive semidefinite in order to ensure
+    non-negative variance.
+\end{note}
+
+Furthermore, for $c \in \C^{n}$ we define the \emph{jump transform} by
+\[
+  \theta(c) = \int_{\R^{n}}
+  \ee^{c \cdot z}\d \nu(z)
+,\]
+whenever this integral is well-defined. The jump transform determines the
 distribution of the jump-sizes. Indeed, for any $u \in \R^n$, set $c = iu$ then 
 \[
   \theta(iu)
@@ -45,45 +51,301 @@ uniquely determined by its characteristic function, the jump transform uniquely 
 A \emph{characteristic} is a tuple containing the coefficients of $X$ as well as the short rate $R$,
 that is, $\chi = (K, H, l, \theta, \rho)$. Given an initial condition $X_0$ a characteristic
 completely determines the distribution of $X$ as well as the effects of discounting. Thus, $\chi$
-also specifies a transform (when well defined) of $X_T$ conditional of $\F_t$ for $t \le T$ given
+also specifies a transform (when well-defined) of $X_T$ conditional on $\F_t$ for $t \le T$ given
 by:
 \begin{align*} 
-  \psi^{\chi}: \C^{n} \times D \times  \R_{\ge 0} \times  \R_{\ge 0} &\to  \C,\\
+  \psi^{\chi}: \C^{n} \times D \times  \R_{\ge 0}^{2} &\to  \C,\\
   (u, X_t, t, T) &\mapsto  \E^{\chi}_t\left[ \ee^{-\int_{t}^{T} R(X_s) \d s}\ee^{u \cdot X_T} \right]
 .\end{align*}
 Where $\E^{\chi}_t = \E^{\chi}[\cdot \mid \F_t]$ denotes the expectation under the distribution of
-$X$ determined by $\chi$ conditional on $\F_t$. We now prove the following result, which is also
-shown in \parencite{Duffie2000}:
+$X$ determined by $\chi$ conditional on $\F_t$. \parencite{Duffie2000} shows the following theorem:
 \begin{theorem}
   Assume the characteristic $\chi$ is \emph{well-behaved} at $(u,T) \in \C^{n} \times \R_{\ge 0}$
   as defined in Definition 1 in \parencite{Duffie2000}. 
   Then,
   \[ 
-    \psi^{X}(u, x, t, T) = \E_{t}^{\chi}\left[ \ee^{\int_{t}^{T} R(X_s) \d s} \ee^{u \cdot X_T} \mid
-    X_t = x\right] = \ee^{\alpha(t) + \beta(t) \cdot x}
+    \psi^{\chi}(u, x, t, T) = \ee^{\alpha(t) + \beta(t) \cdot x}
   ,\]
- where $\alpha$ and $\beta$ are the (unique) solutions to the complex-valued ODEs:
+ where $\alpha$ and $\beta$ are the unique solutions to the complex-valued ODEs:
   \begin{align*} 
-    \frac{\partial \beta}{\partial t} (t) &= \rho_1 + K_1^{\top }\beta(t) - \frac{1}{2} H_1 \beta(t)
+    \frac{\partial \beta}{\partial t} (t) &= \rho_1 - K_1^{\top }\beta(t) - \frac{1}{2} H_1 \beta(t)
     - l_1 (\theta(\beta(t)) - 1)\\
     \frac{\partial \alpha}{\partial t} (t) &=  \rho_0 - K_0 \cdot \beta(t) - \frac{1}{2}
     \beta(t)^{\top }H_0 \beta(t) - l_0(\theta(\beta(t)) -1)
   ,\end{align*}
   with boundary conditions $\beta(T) = u$ and $\alpha(T) = 0$.
 \end{theorem}
-\begin{proof}
-
-\qed
-\end{proof}
-This result is very nice because besides some regularity conditions we now have an explicit way of
-finding the extended transform of $\psi^{\chi}$. The as mentioned in \Cref{ch:intro} the extended
-transform serves multiple use-cases. In particular, the characteristic function of any
-(\emph{well-behaved}) ADJ model is now obtainable, either in closed form or through numerical
-estimation. 
+\begin{remark}[(on notation)]
+  We use the original notation from \parencite{Duffie2000}, even though the tensor product
+   is not well defined. One should interpret these products as
+  \[
+    \underbrace{H_1}_{n\times n \times n} \underbrace{\beta(t)}_{n \times 1 } =  
+    \begin{pmatrix}
+      \beta^\top H_{1,1}\beta\\
+      \vdots\\
+      \beta^\top H_{1,n}\beta
+    \end{pmatrix}.
+  \]
+\end{remark}
+The affine transform formula is particularly useful as it provides a tractable representation of the
+extended transform through a system of ordinary differential equations. As discussed in
+\Cref{ch:intro}, the extended transform has several applications. In particular, we can obtain the
+characteristic function of $X_T$, this allows us to apply Fourier-based methods for
+derivative pricing, which the topic of the next section.
 
 \section{Fourier Pricing}
 \label{sec:fourier}
 
+For this section we follow \parencite{Schmelzle2010} and provide a short introduction to
+Fourier-based methods for derivative pricing.
 
+The theory of Fourier pricing and characteristic functions is rich, but due to scope, we introduce
+only the absolutely necessary Fourier inversion results and derive the Lewis pricing formula, which
+will subsequently be used to price European options under the affine models introduced in the
+previous section. We refer to \parencite{Schmelzle2010}, for a more complete treatment of the
+subject.
 
+The central idea is to express the price of a European derivative in terms of the characteristic
+function of the underlying asset price. Thus, avoiding the need of an explicit density, since
+densities can be difficult to pin down for models with complicated dynamics. 
+
+Recall that the characteristic function uniquely determines the distribution of a random
+variable $X$. This relationship is formalized by the \emph{Inversion Theorem}, which allows
+the distribution function to be recovered from its characteristic function:
+\[
+  F_X(x) = \frac{1}{2} - \frac{1}{2\pi} \int_{\R}
+  \frac{\ee^{-\ii u x}\phi_X(u)}{\ii u} \d u
+  = \frac{1}{2} - \frac{1}{\pi} \int_0^\infty
+  \re\left( \frac{\ee^{-\ii u x}\phi_X(u)}{\ii u} \right) \d u.
+\]
+If $X$ admits a density $f_X$, it can similarly be recovered through Fourier inversion:
+\begin{equation}
+  f_X(x) = \frac{1}{2\pi} \int_{\R} \ee^{-\ii u x}\phi_X(u) \d u
+  = \frac{1}{\pi} \int_0^\infty
+  \re\left( \ee^{-\ii u x}\phi_X(u) \right) \d u
+  \label{eq:inv-ft}
+.\end{equation}
+Here, the first equality in \Cref{eq:inv-ft} is the \emph{inverse Fourier transform}.
+
+To extend Fourier inversion to complex arguments, we introduce the \emph{strip of regularity}
+of $X$, defined as
+\[
+  \mathcal{S}_X = \{ z \in \C \mid \alpha < \im(z) < \beta \},
+\]
+where $\alpha,\beta \in \R$ are such that the extended characteristic function
+$\phi_X(z)$ is well defined on $\mathcal{S}_X$. Writing $z = z_r + \ii z_i$, with
+$z_r,z_i \in \R$, the corresponding generalized inverse Fourier transform is given by
+\[
+  f_X(x) = \frac{1}{2\pi} \int_\R
+  \ee^{-\ii (z_r + \ii z_i)x}
+  \phi_X(z_r + \ii z_i) \d z_r,
+  \qquad z_i \in (\alpha,\beta).
+\]
+
+\subsection{The Lewis approach to Pricing}
+\label{ssec:lewis}
+Let $\phi_T(z)$ denote the generalized characteristic function of the log-price $X_T = \log S_T$ at
+maturity $T$, and let $q(x)$ denote its probability density function. Consider a European claim with
+payoff $w(X_T)$, where $w$ is expressed as a function of the log-price. Assume that there exists
+$z_i \in \R$ such that
+\[
+  z = z_r + \ii z_i \in \mathcal{S}_w \cap \overline{\mathcal{S}_X},
+\]
+where $\mathcal{S}_w$ denotes the strip of regularity of the generalized Fourier transform
+$\hat{w}(z)$ of the payoff function, and
+\[
+  \overline{\mathcal{S}_X}
+  = \{z \in \C \mid \overline{z} \in \mathcal{S}_X\}
+\]
+is the conjugate strip of the generalized characteristic function.
+
+Under these assumptions, the time-zero price $V(S_0)$ of the claim is given by
+\begin{align*}
+  V(S_0)&= \ee^{-rT}\E[w(X_T)] = \ee^{-rT}\int_\R w(x)q(x) \d x 
+  = \ee^{-rT}\frac{1}{2\pi} \int_\R \int_\R \ee^{-\ii z x}\hat{w}(z)q(x) \d x \d z_r \\
+        &=\ee^{-rT} \frac{1}{2\pi} \int_\R \phi_T(-z)\hat{w}(z) \d z_r.
+\end{align*}
+Here, we have used Fourier inversion to express the payoff function in terms of its generalized
+Fourier transform, and interchanged the order of integration by Fubini's Theorem. The final equality
+follows from the definition of the generalized characteristic function, since
+\[
+  \phi_T(-z) = \int_\R \ee^{-\ii z x}q(x)\d x.
+\]
+The condition $z \in \overline{\mathcal{S}_X}$ ensures that this integral is well defined along the
+chosen integration line. This leads us to the following propostion:
+\begin{proposition}[Generalized Fourier transform of a call option]
+  \label{prop:gen-ft-call}
+  Let $r$ and $q$ denote the constant risk-free interest rate and
+  continuous dividend yield, respectively. For
+  $z=(z_r+\ii z_i)\in\overline{\mathcal{S}_X}\cap\mathcal{S}_w$,
+  where $0<z_i<1$, the price of a European call option is given by
+  \begin{equation}
+    C(S_0,K,T)
+    = S_0\ee^{-qT}
+    - \frac{\ee^{-rT}}{2\pi}
+    \int_{\R}\phi_T(-z)
+    \frac{K^{\ii z+1}}{z^2-\ii z}\d z_r.
+    \label{eq:gen-ft-call}
+  \end{equation}
+\end{proposition}
+\begin{proof}
+  Let $z=z_r+\ii z_i$ with $z_i\in(0,1)$. The payoff of a covered call is
+  $w(X_T)=\min\{\ee^{X_T},K\}$. Its generalized Fourier transform is
+  \begin{align*}
+    \hat{w}(z)
+    &= \int_{\R}\ee^{\ii zx}\min\{\ee^x,K\}\d x
+    = \int_{-\infty}^{\log K}\ee^{(\ii z+1)x}\d x
+       +K\int_{\log K}^{\infty}\ee^{\ii zx}\d x
+    = \frac{K^{\ii z+1}}{\ii z+1} -\frac{K^{\ii z+1}}{\ii z}\\
+    &= \frac{K^{\ii z+1}}{z^2-\ii z}.
+  \end{align*}
+  The integrals converge since $z_i\in(0,1)$:
+  \begin{itemize}
+  \item the first integral converges at $-\infty$ when $z_i<1$, 
+  \item the second converges at $+\infty$ when $z_i>0$.
+  \end{itemize}
+  In particular, $\{ z \in \C\mid  0 < \im(z)< 1 \}\in \mathcal{S}_w$. Under the risk-neutral
+  measure $\Q$, the discounted total-return process $\ee^{-(r-q)t}S_t$ is a martingale. Thus,
+  \[
+    \E^\Q[\ee^{X_T}]=\E^\Q[S_T]
+    = S_0\ee^{(r-q)T}<\infty.
+  \]
+  In particular, moments of order $\alpha\in(0,1)$ exist. Hence
+  \[
+    \E^\Q[\ee^{\alpha X_T}]
+    =\E^\Q[S_T^\alpha]
+    \leq 1+\E^\Q[S_T]<\infty.
+  \]
+  which implies that $z \in \mathcal{S}_X.$ Furthermore, the generalized characteristic function
+  satisfies
+  \[
+  \phi_T(-z)=\overline{\phi_T}(\overline{z}),
+  \]
+  which implies that $\phi_T(-z)$ is well-defined for
+  $z\in\overline{\mathcal{S}_X}$.  Since $z$ was arbitrary we conclude $\{ (z_r + \ii z_i) \in \C
+  \mid  0 < z_i < 1\} \subseteq \overline{\mathcal{S}_X} \cap  \mathcal{S}_w$. 
+
+  Applying the generalized Fourier pricing formula, the price
+  of the covered call is
+  \[
+    V_{\mathrm{cc}}(S_0,K,T)
+    =\frac{\ee^{-rT}}{2\pi}
+    \int_{\R}\phi_T(-z)\hat{w}(z)\d z_r.
+  \]
+  Finally, since the call payoff satisfies
+  \[
+    (\ee^{X_T}-K)^+
+    =\ee^{X_T}-\min\{\ee^{X_T},K\},
+  \]
+  we obtain
+  \[
+    \begin{aligned}
+      C(S_0,K,T)
+      &=\ee^{-rT}\E^\Q[S_T]
+        -V_{\mathrm{cc}}(S_0,K,T)\\
+      &=S_0\ee^{-qT}
+        -\frac{\ee^{-rT}}{2\pi}
+        \int_{\R}\phi_T(-z)
+        \frac{K^{\ii z+1}}{z^2-\ii z}\d z_r,
+    \end{aligned}
+  \]
+  which establishes the result.
+  \qed
+\end{proof}
+Let $\phi_{T}^{0}$ be the characteristic function of the standardized log-price, $X_T - X_0 = \log
+\frac{S_T}{S_0 \ee^{rT}}$ at maturity. Then the \Cref{prop:gen-ft-call} yields to Lewis formula: 
+\begin{theorem}[Lewis formula \parencite{Lewis2001}]
+  The price of a European call option on the asset $S_t$ with strike
+  $K$ and maturity $T$ is given by
+  \[
+    C(S_0,K,T)
+    = S_0\ee^{-qT}
+    - \frac{K\ee^{-rT}}{2\pi}
+    \int_{\R}
+    \ee^{-\ii zk}\phi_T^0(-z)
+    \frac{1}{z^2-\ii z}\d z_r,
+  \]
+  where
+  \[
+    k=\log\left(\frac{S_0}{K}\right)+(r-q)T,\qquad 
+    X_T^0=\log\left(\frac{S_T}{S_0\ee^{(r-q)T}}\right),
+    \qquad
+    \phi_T^0(z)=\E^\Q[\ee^{\ii zX_T^0}].
+  \]
+  For $z_i=\frac{1}{2}$, the formula reduces to
+  \[
+    C(S_0,K,T)
+    = S_0\ee^{-qT}
+    - \frac{\sqrt{S_0K}\ee^{-\frac{(r+q)T}{2}}}{\pi}
+    \int_0^\infty
+    \re\left[
+      \ee^{-\ii uk}
+      \phi_T^0\left(-u-\frac{\ii}{2}\right)
+    \right]
+    \frac{1}{u^2+\frac{1}{4}}\d u.
+  \]
+\end{theorem}
+
+\begin{proof}
+  Since $\log S_T=\log S_0+(r-q)T+X_T^0,$ the generalized characteristic function of the log-price
+  satisfies
+  \[
+    \phi_T(-z)
+    =\ee^{-\ii z(\log S_0+(r-q)T)}\phi_T^0(-z).
+  \]
+  Substituting this expression into the generalized Fourier pricing formula for a call option in
+  \Cref{eq:gen-ft-call}, we obtain
+  \begin{align*}
+    C(S_0,K,T)
+    &=S_0\ee^{-qT}
+    -\frac{\ee^{-rT}}{2\pi}
+    \int_{\R}
+    \phi_T(-z)
+    \frac{K^{\ii z+1}}{z^2-\ii z}\d z_r\\
+    &=S_0\ee^{-qT}
+    -\frac{K\ee^{-rT}}{2\pi}
+    \int_{\R}
+    \ee^{-\ii zk}\phi_T^0(-z)
+    \frac{1}{z^2-\ii z}\d z_r,
+  \end{align*}
+  where $k=\log\left(\frac{S_0}{K}\right)+(r-q)T.$ 
+
+  To obtain the second representation, choose $z_i=\frac{1}{2}$ and write $z=u+\frac{\ii}{2}$. Then
+  \[
+    z^2-\ii z
+    =\left(u+\frac{\ii}{2}\right)^2
+      -\ii\left(u+\frac{\ii}{2}\right)
+    =u^2+\frac{1}{4}.
+  \]
+  Furthermore, $\ee^{-\ii zk} =\ee^{-\ii uk}\ee^{k/2}.$ Consequently,
+  \[
+    C(S_0,K,T)
+    =S_0\ee^{-qT}
+    -\frac{K\ee^{-rT}\ee^{k/2}}{2\pi}
+    \int_{\R}
+    \ee^{-\ii uk}
+    \phi_T^0\left(-u-\frac{\ii}{2}\right)
+    \frac{1}{u^2+\frac{1}{4}}\d u.
+  \]
+  Since
+  \[
+    K\ee^{-rT}\ee^{k/2}
+    =\sqrt{S_0K}\ee^{-\frac{(r+q)T}{2}},
+  \]
+  and the integrand at $-u$ is the complex conjugate of the
+  integrand at $u$, we obtain
+  \[
+    C(S_0,K,T)
+    =S_0\ee^{-qT}
+    -\frac{\sqrt{S_0K}\ee^{-\frac{(r+q)T}{2}}}{\pi}
+    \int_0^\infty
+    \re\left[
+      \ee^{-\ii uk}
+      \phi_T^0\left(-u-\frac{\ii}{2}\right)
+    \right]
+    \frac{1}{u^2+\frac{1}{4}}\d u.
+  \]
+  Which completes the proof of Lewis formula
+  \qed
+\end{proof}
 
