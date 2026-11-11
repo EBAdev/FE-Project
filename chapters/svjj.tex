@@ -1,3 +1,98 @@
 \chapter{The SVJJ model}
 \label{ch:svjj}
 
+In this chapter, we introduce a particularly tractable example of an affine jump-diffusion (AJD)
+model, also considered by \textcite{Duffie2000}. The model describes the joint dynamics of a
+stock price and its stochastic variance, allowing for simultaneous jumps in both processes known as
+the SVJJ model.
+
+Let $S_t$ be the price of a stock and $V_t$ its instantaneous variance process. We assume that their
+dynamics under the risk-neutral measure $\Q$ are given by:
+\begin{align*} 
+  \frac{\d S_t }{S_t}&= (r-q- \overline{\mu} \lambda) \d t + \sqrt{V_t}\d B_t  + (\ee^{J^{S}}-1) \d N_t\\ 
+  \d V_t &= \kappa_v(\overline{v}- V_t) \d t + \sigma_v \sqrt{V_t}\d B_t' + J^{V}\d N_t
+.\end{align*}
+Here, $B$ and $B'$ are standard Brownian motions with instantaneous correlation $\d B_t\d
+B_t'=\rho\d t$, where $\rho\in[-1,1]$. Furthermore, $\kappa_v,\overline{v},\sigma_v\geq 0$, and $N$
+is a Poisson process with constant arrival intensity $\lambda\geq 0$. At each jump time, an
+independent jump size $Z=(J^S,J^V)^\top$ is drawn from a fixed distribution $\nu$ on
+$\mathbb{R}^2$.
+
+The jump components $(J^S,J^V)$ describe simultaneous jumps in the log-price and variance, with
+their joint distribution specified by
+\[
+  J^V\sim\exp(\mu_v),
+  \qquad
+  J^S\mid J^V=y\sim
+  N(\mu_s+\rho_j y,\sigma^2),
+\]
+where $\mu_v>0$, $\sigma\geq 0$, and $\mu_s,\rho_j\in\mathbb{R}$.
+
+Since the model is specified under the risk-neutral measure, the discounted stock price must satisfy
+the martingale condition. This imposes the following restriction on the expected jump size.
+\begin{proposition}
+The martingale condition on the discounted stock price $M_t=\ee^{-(r-q)t}S_t$. implies,
+\[ 
+\overline{\mu} = \frac{\ee^{\mu_s + \frac{1}{2} \sigma^2 }}{1-\rho_j \mu_v} -1
+.\]
+\end{proposition}
+\begin{proof}
+  By the Itô product rule, the dynamics of $M_t$ are:
+  \[
+    \frac{\d M_t}{M_{t-}} = -\overline{\mu}\lambda\d t +\sqrt{V_t}\d B_t +(\ee^{J^S}-1)\d N_t.
+  \]
+  Since the jumps are driven by a marked Poisson process, their expected contribution to the drift
+  per unit of time is, the expected contribution from the jumps per unit of time, i.e.
+  $\lambda\E[\ee^{J^S}-1]\d t$. The drift of $M_t$ is therefore $\lambda(
+  \mathbb{E}[\ee^{J^S}-1]-\overline{\mu})\d t.$ Under $\Q$ the discounted stock price is a
+  martingale, hence the martingale condition implies
+  \[ 
+    \overline{\mu}=\mathbb{E}[\ee^{J^S}-1].
+  \]
+  Using the conditional distribution of $J^S$, we obtain
+  \[
+    \mathbb{E}[\ee^{J^S}]
+    =\mathbb{E}\left[ \mathbb{E}[\ee^{J^S}\mid J^V] \right]
+    =\ee^{\mu_s+\frac{1}{2}\sigma^2} \mathbb{E}[\ee^{\rho_jJ^V}]
+    =\frac{\ee^{\mu_s+\frac{1}{2}\sigma^2}} {1-\rho_j\mu_v},
+  \]
+  where the last equality uses that $J^{V} \sim \exp(\mu_v)$. Subtracting one gives the stated result.
+
+\qed
+\end{proof}
+\begin{remark}[Removing correlation of the Brownian motions]
+  Let $Y_t=\log S_t$ denote the log-price. Applying Itô's formula for jump-diffusions gives
+  \begin{align}
+    \d Y_t
+    &=\left(r-q-\overline{\mu}\lambda-\frac{1}{2}V_t\right)\d t
+      +\sqrt{V_t}\d B_t+J^S\d N_t, \nonumber\\
+    \d V_t
+    &=\kappa_v(\overline{v}-V_t)\d t
+      +\sigma_v\sqrt{V_t}\d B_t'+J^V\d N_t.
+    \label{eq:svjj-log}
+  \end{align}
+  By a Cholesky decomposition of the Brownian covariance matrix, we can express the correlated
+  Brownian motions in terms of two independent standard Brownian motions. Consequently, the
+  dynamics can be written as
+  \begin{equation}
+    \d X_t
+    =
+    \begin{pmatrix}
+      r-q-\lambda\overline{\mu}-\frac{1}{2}V_t\\
+      \kappa_v(\overline{v}-V_t)
+    \end{pmatrix}\d t
+    +
+    \sqrt{V_t}
+    \begin{pmatrix}
+      1&0\\
+      \rho\sigma_v&\sqrt{1-\rho^2}\sigma_v
+    \end{pmatrix}\d W_t
+    +\d Z_t,
+    \label{eq:svjj-standard}
+  \end{equation}
+  where $X_t=(Y_t,V_t)^\top$, $W_t=(W_t^1,W_t^2)^\top$ is a two-dimensional standard
+  Brownian motion with independent components, and $Z_t$ denotes the cumulative jump process.
+\end{remark}
+In the following, we use the representation in \eqref{eq:svjj-standard} as the standard
+specification of the SVJJ model.
+
