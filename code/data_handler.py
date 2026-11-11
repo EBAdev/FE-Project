@@ -66,10 +66,12 @@ def load_data(
         return_value["cleaned_dataframe"] = df
 
     if not ITM:
-        # remove ITM opions
+        # remove options that are in-the-money
         df = df[
-            (df["cp_flag"] == "C") & (df["Strike"] > price_underlying)
-            | (df["cp_flag"] == "P") & (df["Strike"] < price_underlying)
+            ~(
+                ((df["cp_flag"] == "C") & (df["Strike"] < price_underlying))
+                | ((df["cp_flag"] == "P") & (df["Strike"] > price_underlying))
+            )
         ]
         return_value["cleaned_dataframe"] = df
 
