@@ -56,8 +56,8 @@ The martingale condition on the discounted stock price $M_t=\ee^{-(r-q)t}S_t$. i
     =\ee^{\mu_s+\frac{1}{2}\sigma^2} \mathbb{E}[\ee^{\rho_jJ^V}]
     =\frac{\ee^{\mu_s+\frac{1}{2}\sigma^2}} {1-\rho_j\mu_v},
   \]
-  where the last equality uses that $J^{V} \sim \exp(\mu_v)$. Subtracting one gives the stated result.
-
+  where the last equality uses the moment generating function of $J^{V} \sim \exp(\mu_v)$.
+  Subtracting one gives the stated result.
 \qed
 \end{proof}
 \begin{remark}[Removing correlation of the Brownian motions]
@@ -75,7 +75,7 @@ The martingale condition on the discounted stock price $M_t=\ee^{-(r-q)t}S_t$. i
   Brownian motions in terms of two independent standard Brownian motions. Consequently, the
   dynamics can be written as
   \begin{equation}
-    \d X_t
+    \d Y_t
     =
     \begin{pmatrix}
       r-q-\lambda\overline{\mu}-\frac{1}{2}V_t\\
@@ -94,5 +94,130 @@ The martingale condition on the discounted stock price $M_t=\ee^{-(r-q)t}S_t$. i
   Brownian motion with independent components, and $Z_t$ denotes the cumulative jump process.
 \end{remark}
 In the following, we use the representation in \eqref{eq:svjj-standard} as the standard
-specification of the SVJJ model.
+specification of the SVJJ model. Comparing the dynamics with the general affine jump-diffusion
+specification introduced in \Cref{ch:affine} and \parencite{Duffie2000}, we can identify the
+corresponding affine coefficients.
+
+In particular, the drift is affine in the state variable \(X_t=(Y_t,V_t)^\top\), with
+\[
+K_0 =
+\begin{pmatrix}
+r-q-\lambda\overline{\mu}\\
+\kappa_v\overline{v}
+\end{pmatrix},
+\qquad
+K_1 =
+\begin{pmatrix}
+0 & -\frac{1}{2}\\
+0 & -\kappa_v
+\end{pmatrix}.
+\]
+The jump intensity is constant, so that
+\[
+l_0=\lambda, \qquad l_1= \begin{pmatrix} 0\\ 0 \end{pmatrix}.
+\]
+The instantaneous covariance matrix is
+\[
+\sigma(X_t)\sigma(X_t)^\top = V_t 
+\begin{pmatrix} 
+  1 & \rho\sigma_v\\ 
+\rho\sigma_v & \sigma_v^2 
+\end{pmatrix}.
+\]
+Thus, the diffusion coefficients are given by
+\[
+H_0 =
+\begin{pmatrix}
+0&0\\
+0&0
+\end{pmatrix},
+\qquad 
+(H_1)_{11} =
+\begin{pmatrix}0\\1\end{pmatrix},
+\qquad
+(H_1)_{12}=(H_1)_{21} =
+\begin{pmatrix}0\\\rho\sigma_v\end{pmatrix},
+\qquad
+(H_1)_{22} =
+\begin{pmatrix}0\\\sigma_v^2\end{pmatrix}.
+\]
+What remains is to specify the jump distribution through its transform.
+\begin{lemma}
+  The jump transform for the SVJJ model is:
+  \begin{equation} 
+  \phi(c)  = \frac{\ee^{\mu_s c_1 + \frac{1}{2} \sigma^2 c_1^2 }}{1-\mu_v c_2 -
+  \rho_J\mu_v c_1}, \quad  c = \begin{pmatrix}
+  c_1\\
+  c_2
+  \end{pmatrix}
+  \in \C^2 
+  \label{eq:svjj-jump-trans}
+  .\end{equation}
+\end{lemma}
+\begin{proof}
+By definition, the jump transform is
+\[
+\phi(c)=\E\left[\exp(c_1J^S+c_2J^V)\right].
+\]
+Conditioning on \(J^V\) and using the conditional normal distribution of \(J^S\), we obtain
+\begin{align*}
+\phi(c)
+&=\E\left[ e^{c_2J^V} \E\left[\ee^{c_1J^S}\mid J^V\right] \right]
+&=\ee^{\mu_sc_1+\frac12\sigma^2c_1^2} \E\left[\ee^{(c_2+\rho_jc_1)J^V}\right].
+\end{align*}
+Since $J^V\sim\exp(\mu_v)$, its moment-generating function gives
+\[
+\E\left[\ee^{(c_2+\rho_jc_1)J^V}\right] = \frac{1}{1-\mu_v(c_2+\rho_jc_1)}.
+\]
+Combining these expressions yields \eqref{eq:svjj-jump-trans}. 
+\qed
+\end{proof}
+We can now apply the affine transform result from \Cref{th:ajd-cf-sol}. If the characteristic $\chi
+= (K,H,l,\theta,\rho)$ are well-behaved, the extended characteristic function admits the
+exponential-affine representation
+
+Assuming we have a parameters such that the characteristic $\chi=(K, H, l, \theta, \rho)$ is
+well-behaved, \Cref{th:ajd-cf-sol} implies that the extended characteristic function of the SVJJ
+model is:
+\[ 
+    \psi^{\chi}(u, x, t, T) = \ee^{\alpha(t) + \beta(t) \cdot x}
+.\]
+where $\alpha$ and $\beta$ solve the corresponding complex-valued Riccati ODEs, subject to
+$\alpha(T)=0,$ and $ \beta(T)=u$.
+
+The first Riccati equation is particularly simple:
+\[
+\frac{\partial\beta_1}{\partial t}(t)=0,
+\qquad
+\beta_1(T)=u_1.
+\]
+Hence, $\beta_1(t)=u_1$ for all $t \in[0,T]$. The remaning Riccatti equations are:
+  \begin{align*} 
+    \frac{\partial \beta_2}{\partial t} (t) &= \frac{1}{2} \beta_1(t) + \kappa_v \beta_2(t) -
+    \frac{1}{2} (\beta_1(t)^2  + 2\beta_1(t) \beta_2(t) \rho \sigma_v + \beta_2(t)^2  \sigma_v^2 )  \\  
+    \frac{\partial \alpha}{\partial t} (t) &= r - (r-1-\lambda \overline{\mu}\beta_1(t)  - \kappa_v
+    \overline{\mu}\beta_2(t) - \lambda(\theta(\beta(t) -1))
+  ,\end{align*}
+\parencite{Duffie2000} shows that these ODE's have a closed form solution. In particular, if we
+define: 
+\begin{align*}
+a & =\ii u+u^2, \quad b=\sigma_v \rho \ii u-\kappa_v \quad 
+c  =1-\rho_{\jmath} \mu_v \ii u, \quad \gamma=\sqrt{b^2+a \sigma_v^2} \\
+\d(t, T) & =\frac{(\gamma-b)(T-t)}{(\gamma-b) c+a \mu_v}-\frac{2 \mu_v a \log
+\left(1-\frac{(\gamma+b) c-\mu_v a}{2 \gamma c}\left(1-\ee^{-\gamma(T-t)}\right)\right)}{(\gamma c)^2-\left(b c-\mu_v a\right)^2} \\
+A_0(u, t, T) & =-\kappa_v \overline{v}\left[\frac{\gamma+b}{\sigma_v^2}(T-t)+\frac{2}{\sigma_v^2} \log
+\left(1-\frac{\gamma+b}{2 \gamma}\left(1-\ee^{-\gamma(T-t)}\right)\right)\right] \\
+f(u, t, T) & =\ee^{\mu_{s} \ii u-\frac{1}{2} \sigma^2 u^2} \d(t, T) .
+\end{align*}
+The characteristic function of the SVJJ model is: 
+\[
+\Phi^{\text{SVJJ}}(u, t, T)=\ee^{\ii u Y_t} e^{A(u, t, T)+B(u, t, T) V_t},
+\]
+where
+\begin{align*}
+& A(u, t, T)=A_0(u, t, T)-\lambda(T-t)(1+\bar{\mu} \ii u)+\lambda f(u, t, T) + \ii u(r-q)(T-t)\\
+& B(u, t, T)=-\frac{a\left(1-\ee^{-\gamma(T-t)}\right)}{2 \gamma-(\gamma+b)\left(1-\ee^{-\gamma(T-t)}\right)} .
+\end{align*}
+
+
 
