@@ -1,9 +1,10 @@
 import numpy as np
 import pandas as pd
+from scipy.optimize import least_squares
+
 from data_handler import load_data
 from Fourier import PRICERS
 from Models.Hawkes import PARAMETER_NAMES, HawkesModel
-from scipy.optimize import least_squares
 
 # ---------------------------------------------------------
 # Hawkes parameters
@@ -12,30 +13,30 @@ from scipy.optimize import least_squares
 
 INITIAL_GUESS = np.array(
     [
-        0.1,  # gamma
+        1.0,  # gamma
         0.2,  # sigma
         2.0,  # delta
-        1.0,  # lambdabar
+        0.01,  # lambdabar
         -0.1,  # epsilon
     ]
 )
 
 LOWER_BOUNDS = np.array(
     [
-        0.01,  # gamma
+        0.05,  # gamma
         0.01,  # sigma
-        0.01,  # delta
+        0.10,  # delta
         0.01,  # lambdabar
-        -2.0,  # epsilon
+        -0.95,  # epsilon
     ]
 )
 
 UPPER_BOUNDS = np.array(
     [
-        2.0,  # gamma
+        10.0,  # gamma
         1.0,  # sigma
         20.0,  # delta
-        10.0,  # lambdabar
+        5.0,  # lambdabar
         -0.001,  # epsilon
     ]
 )
@@ -80,10 +81,7 @@ def price_options(params, groups, price_underlying, q):
         K = g["K"]
         model = create_model(params, r, q)
 
-        # Initialize Hawkes intensity at its stationary mean.
-        lambda0 = (
-            model.delta * model.lambdabar / (model.delta - model.epsilon * model.gamma)
-        )
+        lambda0 = model.stationary_lambda()
         # the initial state vector for the Hawkes model is [log(S0), lambda0]
         Yt = np.array([np.log(price_underlying), lambda0])
 

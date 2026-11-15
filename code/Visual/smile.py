@@ -117,28 +117,15 @@ def plot_smile(file_path, parameter_names, model_smile_function, model_name):
     )
 
     # Market calls.
-    calls = market_iv[(market_iv["cp_flag"] == "C") & market_iv["implied_vol"].notna()]
+    options_to_plot = market_iv[market_iv["implied_vol"].notna()]
 
     ax.scatter(
-        calls["log_moneyness"],
-        calls["implied_vol"] * 100,
+        options_to_plot["log_moneyness"],
+        options_to_plot["implied_vol"] * 100,
         color="red",
         s=35,
         alpha=0.8,
-        label="Market calls",
-        zorder=3,
-    )
-
-    # Market puts.
-    puts = market_iv[(market_iv["cp_flag"] == "P") & market_iv["implied_vol"].notna()]
-
-    ax.scatter(
-        puts["log_moneyness"],
-        puts["implied_vol"] * 100,
-        color="darkorange",
-        s=35,
-        alpha=0.8,
-        label="Market puts",
+        label="Market options",
         zorder=3,
     )
 

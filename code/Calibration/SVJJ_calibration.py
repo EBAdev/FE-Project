@@ -1,9 +1,10 @@
 import numpy as np
 import pandas as pd
+from scipy.optimize import least_squares
+
 from data_handler import load_data
 from Fourier import PRICERS
 from Models.SVJJ import PARAMETER_NAMES, SVJJModel
-from scipy.optimize import least_squares
 
 # ---------------------------------------------------------
 # SVJJ parameters
@@ -14,13 +15,13 @@ V0 = (13 / 100) ** 2  # 0.0169
 INITIAL_GUESS = np.array(
     [
         0.1,  # lmbda
-        -0.7,  # rho
+        -0.20,  # rho
         0.04,  # vbar
-        2.0,  # kappa_v
+        1.0,  # kappa_v
         0.3,  # sigma_v
         -0.1,  # mu_s
         0.15,  # sigma
-        0.1,  # rho_j
+        -0.1,  # rho_j
         0.2,  # mu_v
     ]
 )
@@ -33,9 +34,9 @@ LOWER_BOUNDS = np.array(
         0.001,  # vbar
         0.05,  # kappa_v
         0.01,  # sigma_v
-        -1.0,  # mu_s
+        -5.0,  # mu_s
         0.001,  # sigma
-        -0.99,  # rho_j
+        -5.0,  # rho_j
         0.001,  # mu_v
     ]
 )
@@ -44,13 +45,13 @@ UPPER_BOUNDS = np.array(
     [
         3.0,  # lmbda
         0.99,  # rho
-        0.5,  # vbar
+        1.0,  # vbar
         10.0,  # kappa_v
         3.0,  # sigma_v
-        1.0,  # mu_s
+        5.0,  # mu_s
         1.0,  # sigma
-        0.99,  # rho_j
-        2.0,  # mu_v
+        5.0,  # rho_j
+        5.0,  # mu_v
     ]
 )
 
@@ -95,6 +96,8 @@ def price_options(params, groups, price_underlying, q):
         model = create_model(params, r, q)
 
         calls = PRICERS[METHOD](model, price_underlying, K, tau, Yt)
+        # included to show how to process puts, but will just be empty.
+        # not needed since we already converted puts to calls in the data_handler.py
         puts = PRICERS["put_call_parity"](calls, price_underlying, K, tau, r, q)
 
         prices[g["idx"]] = np.where(g["is_call"], calls, puts)
@@ -219,20 +222,11 @@ if __name__ == "__main__":
     # Configuration
     # ---------------------------------------------------------
 
-    # Number of options per maturity and option type.
-    # For example, 10 calls and 10 puts per maturity.
-    NUM_OPTIONS = 10
-
-    # Load market data
-    data = load_data()
+    data = load_data(NoArb=True)
     df = data["cleaned_dataframe"]
     q = data["q"]
     r_by_maturity = data["r_by_maturity"]
     S0 = data["underlying_close"]
-
-    print(f"Inferred dividend yield: {q:.6f}")
-    for maturity, r in r_by_maturity.items():
-        print(f"Inferred discount rate for {maturity.date()}: {r:.6f}")
 
     # ---------------------------------------------------------
     # Calibration

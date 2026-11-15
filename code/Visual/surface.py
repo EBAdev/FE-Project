@@ -54,31 +54,16 @@ def plot_surface(file_path, parameter_names, model_surface_function, model_name)
     )
 
     # Overlay market observations.
-    calls = market_data[
-        (market_data["cp_flag"] == "C") & market_data["implied_vol"].notna()
-    ]
+    options_to_plot = market_data[market_data["implied_vol"].notna()]
 
     ax.scatter(
-        calls["time_to_maturity"],
-        calls["log_moneyness"],
-        calls["implied_vol"] * 100,
+        options_to_plot["time_to_maturity"],
+        options_to_plot["log_moneyness"],
+        options_to_plot["implied_vol"] * 100,
         color="red",
         s=15,
         alpha=0.8,
-        label="Market implied volatility (calls)",
-    )
-
-    puts = market_data[
-        (market_data["cp_flag"] == "P") & market_data["implied_vol"].notna()
-    ]
-    ax.scatter(
-        puts["time_to_maturity"],
-        puts["log_moneyness"],
-        puts["implied_vol"] * 100,
-        color="darkorange",
-        s=15,
-        alpha=0.8,
-        label="Market implied volatility (puts)",
+        label="Market implied volatility",
     )
 
     ax.set_xlabel("Time to maturity (years)", labelpad=12)

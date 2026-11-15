@@ -1,6 +1,7 @@
 import numpy as np
-from Models.AffineModel import AffineModel
 from scipy.integrate import solve_ivp
+
+from Models.AffineModel import AffineModel
 
 PARAMETER_NAMES = [
     "gamma",
@@ -13,21 +14,16 @@ PARAMETER_NAMES = [
 
 class HawkesModel(AffineModel):
     """
-    Affine Hawkes model with exponentially distributed negative
+    Affine Hawkes model with negatively exponentially distributed
     log-price jumps and self-exciting jump intensity.
 
-    State:
-        Y_t = [X_t, lambda_t]
+    State vector:
+        X_t = [Y_t, lambda_t]
 
-    where:
-        X_t       : log-price
-        lambda_t  : Hawkes intensity
+    Jump vector:
+        Delta X_t = [J, epsilon * J]
 
-    Jump distribution:
-        J ~ -Exp(gamma)
-
-    Intensity jump:
-        Delta lambda = epsilon
+    where J is negative exponentially distributed with rate gamma.
     """
 
     def __init__(
@@ -48,7 +44,19 @@ class HawkesModel(AffineModel):
         self.lambdabar = lambdabar
         self.epsilon = epsilon
 
-        # Compensator for the log-price jumps
+        if gamma <= 0:
+            raise ValueError("gamma must be positive.")
+        if sigma < 0:
+            raise ValueError("sigma must be non-negative.")
+        if delta <= 0:
+            raise ValueError("delta must be positive.")
+        if lambdabar <= 0:
+            raise ValueError("lambdabar must be positive.")
+        if epsilon >= 0:
+            raise ValueError("epsilon must be negative.")
+
+        # Compensator for the log-price jumps:
+        # J ~ -Exp(gamma), hence E[exp(J) - 1] = -1/(1+gamma).
         self.mubar = -1.0 / (1.0 + gamma)
 
         # Affine drift coefficients
@@ -80,37 +88,60 @@ class HawkesModel(AffineModel):
 
         H1 = np.zeros((2, 2, 2))
 
-        # No standalone constant killing rate for the
-        # characteristic function of the log-price.
+        # No killing rate for the characteristic function
         rho0 = 0.0
         rho1 = np.zeros(2)
 
         super().__init__(K0, K1, H0, H1, I0, I1, rho0, rho1)
 
     def jump_transform(self, beta):
-        return np.exp(self.epsilon * beta[1]) * self.gamma / (self.gamma + beta[0])
+        """
+        Jump transform:
+
+            theta(beta) = E[exp(beta_1 * J + beta_2 * epsilon * J)]
+
+                       = gamma / (gamma + beta_1 + epsilon * beta_2)
+
+        where J ~ -Exp(gamma).
+
+        beta can have shape (2,) or (..., 2).
+        """
+        beta = np.asarray(beta, dtype=complex)
+
+        denominator = self.gamma + beta[..., 0] + self.epsilon * beta[..., 1]
+
+        return self.gamma / denominator
 
     def _riccati_system(self, tau, y, n):
         """
-        Vectorized Riccati equations for n Fourier arguments.
+        Riccati system in time-to-maturity coordinates.
 
-        y contains:
-            alpha[0:n]
-            beta_1[0:n]
-            beta_2[0:n]
+        State vector y is arranged as:
+
+            y = [alpha, beta_Y, beta_lambda]
+
+        Each component contains n Fourier arguments.
         """
-        y = y.reshape(3, n)
+        alpha, beta1, beta2 = y.reshape(3, n)
 
-        # alpha = y[0]
-        beta = y[1:]
+        beta = np.stack((beta1, beta2), axis=-1)
 
         theta = self.jump_transform(beta)
 
-        dbeta = self.K1.T @ beta + self.I1[:, None] * (theta - 1.0)
+        # d beta_Y / d tau = 0
+        dbeta1 = np.zeros(n, dtype=complex)
 
-        dalpha = self.K0 @ beta + 0.5 * self.sigma**2 * beta[0] ** 2
+        # d beta_lambda / d tau
+        dbeta2 = -self.mubar * beta1 - self.delta * beta2 + theta - 1.0
 
-        return np.concatenate((dalpha, dbeta[0], dbeta[1]))
+        # d alpha / d tau
+        dalpha = (
+            (self.r - self.q - 0.5 * self.sigma**2) * beta1
+            + self.delta * self.lambdabar * beta2
+            + 0.5 * self.sigma**2 * beta1**2
+        )
+
+        return np.concatenate((dalpha, dbeta1, dbeta2))
 
     def characteristic_function(
         self,
@@ -148,7 +179,10 @@ class HawkesModel(AffineModel):
 
         n = len(u)
 
-        # Terminal conditions at tau = 0
+        # Initial conditions at tau = 0:
+        # alpha(0) = 0
+        # beta_Y(0) = i*u
+        # beta_lambda(0) = 0
         y0 = np.concatenate(
             (
                 np.zeros(n, dtype=complex),
@@ -175,9 +209,16 @@ class HawkesModel(AffineModel):
 
         return result[0] if scalar_input else result
 
+    def stationary_lambda(self):
+        """
+        Stationary jump intensity:
+
+            lambda_bar = delta * lambdabar / (delta - epsilon * gamma)
+        """
+        return self.delta * self.lambdabar / (self.delta - self.epsilon * self.gamma)
+
 
 if __name__ == "__main__":
-    # Test the characteristic function of the Hawkes model
     model = HawkesModel(
         r=0.04,
         q=0.0,
@@ -185,29 +226,31 @@ if __name__ == "__main__":
         sigma=0.15,
         delta=1.1,
         lambdabar=0.5,
-        epsilon=0.1,
+        epsilon=-0.1,
     )
 
-    Yt = np.array([np.log(100.0), 0.5])
+    Xt = np.array([np.log(100.0), 0.5])
 
-    # Test scalar input
-    phi_scalar = model.characteristic_function(0.5, 0.0, 1.0, Yt)
+    # Scalar input
+    phi_scalar = model.characteristic_function(0.5, 0.0, 1.0, Xt)
 
-    # Test vector input
+    # Vector input
     u = np.linspace(-50, 50, 100)
-    phi_vector = model.characteristic_function(u, 0.0, 1.0, Yt)
+    phi_vector = model.characteristic_function(u, 0.0, 1.0, Xt)
 
     # Characteristic function at zero
-    phi_zero = model.characteristic_function(0.0, 0.0, 1.0, Yt)
+    phi_zero = model.characteristic_function(0.0, 0.0, 1.0, Xt)
 
     print("Scalar:", phi_scalar)
     print("Vector shape:", phi_vector.shape)
     print("Phi(0):", phi_zero)
 
+    # Conjugate symmetry
     u = np.linspace(0.1, 50, 100)
 
-    phi_pos = model.characteristic_function(u, 0.0, 1.0, Yt)
-    phi_neg = model.characteristic_function(-u, 0.0, 1.0, Yt)
+    phi_pos = model.characteristic_function(u, 0.0, 1.0, Xt)
+    phi_neg = model.characteristic_function(-u, 0.0, 1.0, Xt)
 
-    print(np.max(np.abs(phi_neg - np.conj(phi_pos))))
-    print(np.max(np.abs(phi_vector)))
+    print("Conjugate symmetry error:", np.max(np.abs(phi_neg - np.conj(phi_pos))))
+
+    print("Maximum characteristic function magnitude:", np.max(np.abs(phi_vector)))
