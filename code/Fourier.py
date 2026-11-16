@@ -332,37 +332,59 @@ PRICERS = {
 if __name__ == "__main__":
 
     # price a five options using all three methods and compare the results
-    from Models.SVJJ import SVJJModel
+    from Models.SVJJ import PARAMETER_NAMES, SVJJModel
 
-    # Model parameters
+    r = 0.05
+    q = 0.02
+
     params = {
-        "kappa_v": 2.0,
+        "lmbda": 0.5,
+        "rho": -0.2,
         "vbar": 0.04,
-        "sigma_v": 0.3,
-        "mu_s": 0.05,
+        "kappa_v": 0.5,
+        "sigma_v": 0.2,
+        "mu_s": -0.1,
         "sigma": 0.2,
-        "rho": -0.5,
-        "rho_j": 0.1,
-        "mu_v": 0.03,
-        "r": 0.01,
-        "q": 0.02,
-        "lmbda": 0.1,
+        "rho_j": -0.5,
+        "mu_v": 0.2,
     }
-
-    model = SVJJModel(**params)
-
+    V0 = 0.04
     S0 = 100.0
-    strikes = np.array([90, 95, 100, 105, 110])
-
     T = 0.5
-    Xt = np.array([np.log(S0), model.vbar])
 
-    for method in ["carr_madan", "lewis", "probability"]:
-        call_prices = PRICERS[method](model, S0, strikes, T, Xt)
-        put_prices = put_call_parity(call_prices, S0, strikes, T, model.r, model.q)
+    model = SVJJModel(r=r, q=q, **params)
 
-        print(f"Method: {method}")
-        print("Strike\tCall Price\tPut Price")
-        for K, C, P in zip(strikes, call_prices, put_prices):
-            print(f"{K}\t{C:.4f}\t\t{P:.4f}")
-        print()
+    strikes = np.array([80, 90, 95, 100, 105, 110, 120])
+
+    Xt = np.array([np.log(S0), V0])
+
+    results = {}
+
+    methods = ["lewis", "carr_madan", "probability"]
+    for method in methods:
+        results[method] = PRICERS[method](
+            model,
+            S0,
+            strikes,
+            T,
+            Xt,
+        )
+
+    print("Comparison of Fourier pricing methods")
+    print("--------------------------------------")
+
+    for i, K in enumerate(strikes):
+        print(f"\nStrike: {K}")
+
+        for method in methods:
+            print(f"{method:12s}: " f"{results[method][i]:.10f}")
+
+        print(
+            "Lewis-Carr-Madan difference:",
+            f"{abs(results['lewis'][i] - results['carr_madan'][i]):.3e}",
+        )
+
+        print(
+            "Lewis-Probability difference:",
+            f"{abs(results['lewis'][i] - results['probability'][i]):.3e}",
+        )

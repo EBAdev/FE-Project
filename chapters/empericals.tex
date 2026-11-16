@@ -1,0 +1,168 @@
+\chapter{Calibration and Performance of SVJJ}
+\label{ch:calibration}
+To assess the performance of the SVJJ model, we consider a dataset of European call and put options
+on the S\&P 500 index (SPX), observed at the close of business on 13 November 2019. On this date,
+the SPX closed at 3094.04 USD. The data processing follows \parencite{FEdatahandling} and
+\parencite{Kokholm2016}. After removing options with a zero bid or ask price, the dataset contains
+3,665 observations across 12 different maturities.
+
+Before filtering the data, we infer the dividend yield $q$ and the continuously compounded spot
+rates $r_{T_i}$, $i=1,\ldots,12$. Following \parencite{FEdatahandling}, these are estimated by
+solving the least-squares problem
+\[
+\arg\min_{q,\{r_{T_i}\}_{i=1}^{12}}
+\sum_{i=1}^{12}\sum_{j=1}^{10}
+\left(
+P(T_i,K_j^i)
+-
+P^{PC}(C(T_i,K_j^i),q,r_{T_i})
+\right)^2,
+\]
+where $P(T_i,K_j^i)$ denotes the quoted mid-price of a put option with maturity $T_i$ and strike
+$K_j^i$, while $C(T_i,K_j^i)$ denotes the corresponding call mid-price. The function $P^{PC}$
+gives the put price implied by put-call parity:
+\[
+P^{PC}(C(T,K),q,r)
+=
+C(T,K)+Ke^{-rT}-S_0e^{-qT}.
+\]
+Having inferred the interest rates and dividend yield, we remove in-the-money (ITM) options and
+impose the following no-arbitrage restrictions on the remaining observations.
+\begin{itemize}
+\item We convert put prices into equivalent call prices using put-call parity and, where both call
+  and put quotes are available, take the average of the two call prices.
+\item We remove observations that violate the no-arbitrage conditions outlined in
+  \parencite{Kokholm2016} (Equations 30 to 32). For a fixed maturity, these conditions are
+\begin{align*}
+&C_t(S_t;T,K_j)
+\geq
+\max\left\{
+0,
+S_t e^{-\int_t^T q_s\,\mathrm{d}s}
+-
+K_j e^{-\int_t^T r_s\,\mathrm{d}s}
+\right\},
+\tag{Price bounds},\\
+&\frac{C_t(S_t;T,K_{j-1})-C_t(S_t;T,K_j)}
+{K_j-K_{j-1}}
+\in
+\left[0,e^{-\int_t^T r_s\,\mathrm{d}s}\right],
+\tag{Monotonicity},\\
+&\frac{C_t(S_t;T,K_{j-1})-C_t(S_t;T,K_j)}
+{K_j-K_{j-1}}
+-
+\frac{C_t(S_t;T,K_j)-C_t(S_t;T,K_{j+1})}
+{K_{j+1}-K_j}
+\geq 0,
+\tag{Convexity},
+\end{align*}
+where $K_{j-1}<K_j<K_{j+1}$.
+
+For the monotonicity and convexity conditions, each violation involves two and three observations,
+respectively. We iteratively remove the observation involved in the most violations until none
+remain. Ties are broken by removing the observation with the widest bid-ask spread, or the first
+candidate if bid-ask quotes are unavailable.
+
+\item Finally, we only retain maturities with more than 10 available quotes after filtering.
+\end{itemize}
+
+An outline of how much data was removed in each step is included in \Cref{tab:option-filtering}
+\begin{table}
+  \centering
+  \begin{tabular}{lr}
+    \toprule
+    \textbf{Filtering step} & \textbf{Observations} \\
+    \midrule
+    Initial observations & 3,778 \\
+    Observations after cleaning & 3,665 \\
+    \midrule
+    Removed ITM options & 1,889 \\
+    \quad Original call observations & 417 \\
+    \quad Puts converted to calls & 1,359 \\
+    Total call observations & 1,776 \\
+    \midrule
+    Removed by price bounds & 0 \\
+    Removed by slope/convexity & 476 \\
+    \quad Monotonicity violations found & 11 \\
+    \quad Convexity violations found & 7,470 \\
+    Removed by maturity filter & 0 \\
+    \midrule
+    \textbf{Remaining observations} & \textbf{1,300} \\
+    Remaining maturities & 12 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Summary of option data filtering.}
+  \label{tab:option-filtering}
+\end{table}
+The inferred dividend yields and interest rates are shown in \Cref{tab:inferred_r_q}
+\begin{table}
+    \centering
+    \begin{tabular}{lr}
+        \toprule
+        Maturity & Discount Rate (\%) \\
+        \midrule
+        2019-12-20 & 1.6363 \\
+        2020-01-17 & 2.2618 \\
+        2020-02-21 & 2.1114 \\
+        2020-03-20 & 2.0377 \\
+        2020-04-17 & 2.0842 \\
+        2020-06-19 & 1.9725 \\
+        2020-09-18 & 1.9201 \\
+        2020-10-16 & 1.9552 \\
+        2020-11-20 & 1.9100 \\
+        2020-12-18 & 1.8770 \\
+        2021-06-18 & 1.8524 \\
+        2021-12-17 & 1.8359 \\
+        \midrule
+        Inferred dividend yield & 1.8909 \\
+        \bottomrule
+    \end{tabular}
+    \caption{Inferred discount rates by maturity}
+    \label{tab:inferred_r_q}
+\end{table}
+All of this data processing is implemented in \verb|data_handler.py|. 
+A Python implementations of the AJD and SVJJ models, together with the Fourier pricing methods
+discussed in \Cref{ch:affine,ch:svjj}, is available in \verb|Models/AJDModel.py|,
+\verb|Models/SVJJModel.py| and \verb|Fourier.py|, respectively.
+
+The SVJJ model is calibrated jointly to all available observations across the 12 maturities, i.e. we estimate $\theta =
+(\lambda,\rho,\overline{v},\kappa_v,\sigma_v, \mu_s,\sigma,\rho_j,\mu_v,V_0),$. 
+The initial variance $V_0$ is included as an additional calibration parameter, while the risk-free
+interest rate is allowed to vary across maturities according to the previously inferred spot rates.
+
+The calibration is performed by minimizing relative pricing errors. For an option with maturity
+$T_i$ and strike $K_j^i$, we define the normalized price error:
+\[
+\epsilon^i(\theta)
+=
+\frac{
+C_{\mathrm{model}}(T_i,K_j^i;\theta)
+-
+C_{\mathrm{market}}(T_i,K_j^i)
+}{
+C_{\mathrm{market}}(T_i,K_j^i)
+}.
+\]
+By minimizing over $\epsilon_j$ we stop options with higher prices from dominating the objective
+function. The calibration is implemented in \verb|Calibration/SVJJ_calibration.py|. The initial parameter guesses and
+optimization bounds are reported in \Cref{tab:parameter-bounds}, the bounds are chosen to satisfy
+the parameter restrictions derived in \Cref{ch:svjj}.
+\begin{table}
+    \centering
+    \begin{tabular}{lrrrrrrrrrr}
+        \hline
+        & $\lambda$ & $\rho$ & $\overline{v}$ & $\kappa_v$ & $\sigma_v$ & $\mu_s$ & $\sigma$ & $\rho_j$ & $\mu_v$ & $V_0$\\
+        \hline
+      Initial Guess & 0.100 & -0.200 & 0.040 & 1.000 & 0.300 & -0.100 & 0.150 & -0.100 & 0.200 & 0.020\\
+      Lower Bound   & 0.001 & -0.990 & 0.001 & 0.001 & 0.001 & -10.00 & 0.001 & -10.00 & 0.001 &
+      0.001 \\
+      Upper Bound   & 10.00 & 0.990 & 1.000 & 10.00 & 10.00 & 10.00 & 1.000 & 10.00 & 10.00 &
+      10.000\\
+        \hline
+    \end{tabular}
+    \caption{Initial parameter guesses and optimization bounds}
+    \label{tab:parameter-bounds}
+\end{table}
+
+
+

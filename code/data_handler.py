@@ -67,19 +67,22 @@ def load_data(
         return_value["q"] = inferred_q
 
     if clean:
-        df = clean_data(df, price_underlying)
-        return_value["cleaned_dataframe"] = df
+        c_df = clean_data(df, price_underlying)
+        if verbose:
+            print(f"Initial number of observations: {len(df)}")
+            print(f"Number of observations after cleaning: {len(c_df)}")
+        return_value["cleaned_dataframe"] = c_df
 
     if NoArb:
-        df = remove_arbitrage_violations(
-            df,
+        narb_df = remove_arbitrage_violations(
+            c_df,
             price_underlying,
             return_value["r_by_maturity"],
             return_value["q"],
             verbose=verbose,
         )
 
-    return_value["cleaned_dataframe"] = df
+        return_value["cleaned_dataframe"] = narb_df
 
     return return_value
 
@@ -105,7 +108,7 @@ def remove_arbitrage_violations(
 
     df = df.copy()
     # ---------------------------------------------------------
-    # 1. Remove ITM options
+    # 0. Remove ITM options
     # ---------------------------------------------------------
     n_before_itm = len(df)
     df = df[

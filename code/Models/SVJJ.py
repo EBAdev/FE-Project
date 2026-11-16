@@ -100,7 +100,18 @@ class SVJJModel(AffineModel):
         )
         f2_bottom = (gamma * c) ** 2 - (b * c - a * self.mu_v) ** 2
 
-        return frac1 - f2_top / f2_bottom
+        # Handle potential division by zero or invalid operations
+        with np.errstate(divide="ignore", invalid="ignore"):
+            result = frac1 - f2_top / f2_bottom
+
+        # Removable singularity at a = 0
+        result = np.where(
+            np.asarray(a) == 0,
+            tau / c,
+            result,
+        )
+
+        return result
 
     def A0(self, a, b, gamma, tau):
 
@@ -142,3 +153,49 @@ class SVJJModel(AffineModel):
         B = self.B(a, b, gamma, tau)
 
         return np.exp(1j * u * Yt) * np.exp(A + B * Vt)
+
+
+if __name__ == "__main__":
+
+    # Example parameters for testing
+    S0 = 100.0
+    V0 = 0.04
+    r = 0.05
+    q = 0.02
+    T = 1.0  # 1 year to maturity
+
+    params = {
+        "lmbda": 0.5,
+        "rho": -0.2,
+        "vbar": 0.04,
+        "kappa_v": 0.5,
+        "sigma_v": 0.2,
+        "mu_s": -0.1,
+        "sigma": 0.2,
+        "rho_j": -0.5,
+        "mu_v": 0.2,
+    }
+
+    model = SVJJModel(r=r, q=q, **params)
+
+    print("\nSVJJ characteristic function diagnostics")
+    print("----------------------------------------")
+
+    Xt = np.array([np.log(S0), V0])
+
+    phi_zero = model.characteristic_function(0.0, 0.0, T, Xt)
+
+    expected_martingale = S0 * np.exp((r - q) * T)
+
+    phi_minus_i = model.characteristic_function(-1j, 0.0, T, Xt)
+
+    print(f"\nMaturity: {T:.4f}")
+    print(f"phi(0): {phi_zero}")
+    print("Expected: 1.0")
+    print(f"phi(-i): {phi_minus_i}")
+    print(f"Expected martingale: {expected_martingale:.8f}")
+
+    if np.isfinite(phi_minus_i):
+        error = abs(phi_minus_i - expected_martingale) / expected_martingale
+
+        print(f"Martingale error: {error:.3e}")
