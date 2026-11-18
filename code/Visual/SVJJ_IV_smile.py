@@ -1,15 +1,14 @@
 import numpy as np
-
 from Fourier import PRICERS
 from Models.SVJJ import PARAMETER_NAMES, SVJJModel
 from option_pricing import implied_volatility_call
 from Visual.smile import plot_smile
 from Visual.utils import create_model
 
-PARAMETER_FILE = "calibrated_svjj_parameters.csv"
+PARAMETER_FILE = "calibrated_svjj_parameters_v0.csv"
 METHOD = "lewis"
-V0 = (13 / 100) ** 2  # 0.0169
 
+PARAMETER_NAMES = [name for name in PARAMETER_NAMES] + ["V0"]
 
 NUM_STRIKES = 100
 
@@ -40,12 +39,12 @@ def calculate_svjj_smile(
 
     strikes = S0 * np.exp(log_moneyness)
 
-    model = create_model(SVJJModel, PARAMETER_NAMES, params, r, q)
+    model = create_model(SVJJModel, PARAMETER_NAMES, params[:-1], r, q)
 
     Yt = np.array(
         [
             np.log(S0),
-            V0,
+            params[-1],  # V0 is the last parameter
         ]
     )
 
