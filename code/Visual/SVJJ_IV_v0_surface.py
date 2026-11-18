@@ -3,17 +3,16 @@ import pandas as pd
 
 from Fourier import PRICERS
 from Models.SVJJ import PARAMETER_NAMES, SVJJModel
-from option_pricing import implied_volatility_call
 from Visual.surface import plot_surface
-from Visual.utils import create_model
+from Visual.utils import create_model, surface_iv_from_calls
 
-PARAMETER_FILE = "calibrated_svjj_parameters_final_with_vega.csv"
+PARAMETER_FILE = "calibrated_svjj_parameters.csv"
 MODEL_PARAMETER_NAMES = list(PARAMETER_NAMES)
 CALIBRATION_PARAMETER_NAMES = MODEL_PARAMETER_NAMES + ["V0"]
 METHOD = "lewis"
 
-NUM_STRIKES = 100
-NUM_MATURITIES = 50
+NUM_STRIKES = 200
+NUM_MATURITIES = 100
 
 MIN_LOG_MONEYNESS = -2.0
 MAX_LOG_MONEYNESS = 0.4
@@ -96,16 +95,7 @@ def calculate_svjj_surface(
             Xt,
         )
 
-        for j, K in enumerate(strikes):
-
-            iv_surface[i, j] = implied_volatility_call(
-                call_prices[j],
-                S0,
-                K,
-                T,
-                r,
-                q,
-            )
+        iv_surface[i] = surface_iv_from_calls(call_prices, S0, strikes, T, r, q)
 
     return maturities, log_moneyness, iv_surface
 
