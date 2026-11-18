@@ -1,4 +1,5 @@
 import numpy as np
+
 from Models.AffineModel import AffineModel
 
 PARAMETER_NAMES = [
