@@ -31,9 +31,6 @@ class ModelSpec:
     log_sample_ranges: dict  # name -> (lo, hi), sampled log-uniformly
     uniform_sample_ranges: dict  # name -> (lo, hi), sampled uniformly
     output_file: str
-    sensitivity_params: tuple = ()  # parameters reported in floor sensitivity
-    # Optional ridge priors: (name, centre, strength) appended as residuals.
-    priors: tuple = ()
     structural_checks: Optional[Callable[[dict], None]] = None
     param_names: list = field(init=False)
 
@@ -84,7 +81,6 @@ HESTON = ModelSpec(
     },
     uniform_sample_ranges={"rho": (-0.95, 0.5)},
     output_file="calibrated_heston_parameters.csv",
-    sensitivity_params=("kappa", "theta", "sigma", "rho", "V0"),
     structural_checks=heston_checks,
 )
 
@@ -141,9 +137,6 @@ SVJJ = ModelSpec(
         "rho_j": (-3.0, -0.05),
     },
     output_file="calibrated_svjj_parameters.csv",
-    sensitivity_params=("sigma", "rho_j", "mu_v"),
-    # e.g. (("sigma", 0.10, 0.05),) to ridge the weakly identified jump std
-    priors=(),
     structural_checks=svjj_checks,
 )
 
@@ -189,8 +182,6 @@ SVJ = ModelSpec(
     },
     uniform_sample_ranges={"rho": (-0.9, 0.2), "mu_s": (-0.3, 0.1)},
     output_file="calibrated_svj_parameters.csv",
-    sensitivity_params=("sigma",),
-    priors=(),
     structural_checks=svj_checks,
 )
 

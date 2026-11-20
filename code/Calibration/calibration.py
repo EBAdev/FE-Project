@@ -1,5 +1,5 @@
 """
-Generic two-stage least-squares calibration of affine option pricing models.
+Multi-start least-squares calibration of affine option pricing models.
 
 Usage (from the code/ directory):
     python -m Calibration.calibration --model svjj --objective vega
@@ -13,8 +13,7 @@ Objectives (residual_i = w_i * (model_i - market_i), minimise sum residual_i^2):
 where floor = min_weight_frac * median(vega or spread). Options below the floor
 ("at_floor") are down-weighted relative to the pure weighting.
 
-Stage 1 screens n_starts random starting points with cheap fits; stage 2
-tightly refines up to n_refine *distinct* basins and keeps the best.
+Each starting point is optimised directly; the solution with the lowest cost is kept.
 """
 
 import argparse
@@ -29,33 +28,30 @@ from data_handler import load_data
 from Fourier import PRICERS
 
 # ---------------------------------------------------------
-# Settings
+# Calibration defaults
 # ---------------------------------------------------------
 
 MODEL = "svjj"  # key in SPECS
 OBJECTIVE = "vega"  # "vega", "bidask" or "sse"
 METHOD = "lewis"
 
-# Minimum weight fraction for vega or bidask objectives. Options with weight below this fraction of the median are down-weighted to the floor.
+# Minimum scale used in vega- and bid-ask-weighted objectives.
 MIN_WEIGHT_FRAC = 0.05
-RUN_FLOOR_SENSITIVITY = True
-FLOOR_GRID = (0.10, 0.03, 0.01)
 
-# Two refined candidates are "the same basin" if their x_scale-normalised
-# distance is below this.
-BASIN_MIN_DIST = 0.05
-
-# Residual for failed pricing, in implied-vol units. It is converted to the
-# objective's units via the median of vega * weight (= 1 for the vega objective).
+# Residual used when model pricing fails or returns non-finite values.
 PENALTY = 1.0
 
-# (label, multiplier) used to report residual RMS in readable units
+# (label, multiplier) used to report residual RMS in readable units.
 OBJECTIVES = {
     "vega": ("vol pts", 100.0),
     "bidask": ("spreads", 1.0),
     "sse": ("price units", 1.0),
 }
 
+# One-off calibration settings. Override these from the command line if needed.
+N_STARTS = 20
+MAX_NFEV = 500
+SEED = 42
 
 # ---------------------------------------------------------
 # Black-Scholes helpers (vectorised)
@@ -106,7 +102,7 @@ def implied_vol(price, S, K, tau, r, q, is_call, lo=1e-4, hi=5.0, n_iter=80):
 
 
 def build_groups(market_data, r_by_maturity):
-    """Group options by maturity (one characteristic-function pass each)."""
+    """Group the options by maturity, since the characteristic function is the same for all strikes."""
     exdates = pd.to_datetime(market_data["exdate"]).to_numpy()
     strikes = market_data["Strike"].to_numpy(dtype=float)
     taus = market_data["time_to_maturity"].to_numpy(dtype=float)
@@ -156,7 +152,6 @@ def prepare_problem(
     r_by_maturity = {pd.Timestamp(k): v for k, v in r_by_maturity.items()}
 
     df = market_data.dropna(subset=["Mid"])
-    df = df[df["Mid"] > 0].reset_index(drop=True)
 
     r_opt = pd.to_datetime(df["exdate"]).map(r_by_maturity).to_numpy(dtype=float)
     K = df["Strike"].to_numpy(dtype=float)
@@ -260,19 +255,17 @@ def price_options(params, problem):
 
 
 def residuals(params, problem):
+    """Weighted model-minus-market prices, with non-finite values replaced by a penalty."""
     spec, pen = problem["spec"], problem["penalty"]
     try:
         model_prices = price_options(params, problem)
     except Exception:
-        return np.full(len(problem["mid"]) + len(spec.priors), pen)
+        return np.full(len(problem["mid"]), pen)
 
     res = (model_prices - problem["mid"]) * problem["weights"]
+    # Replace non-finite residuals with penalty
+    # this can happen if the model price is NaN or Inf, e.g. due to numerical issues in the characteristic function
     res = np.where(np.isfinite(res), res, pen)
-    res = np.clip(res, -5 * pen, 5 * pen)
-
-    if spec.priors:
-        prior = [s * (params[spec.idx[n]] - c) for n, c, s in spec.priors]
-        res = np.append(res, prior)
 
     return res
 
@@ -283,6 +276,7 @@ def residuals(params, problem):
 
 
 def sample_starts(spec, initial_guess, n_starts, seed):
+    """Sample starting points in the parameter space, including the initial guess."""
     rng = np.random.default_rng(seed)
     starts = [np.asarray(initial_guess, dtype=float)]
 
@@ -298,42 +292,21 @@ def sample_starts(spec, initial_guess, n_starts, seed):
     return [np.clip(x, spec.lower + margin, spec.upper - margin) for x in starts]
 
 
-def select_distinct(spec, results, n_select, min_dist=BASIN_MIN_DIST):
-    """Indices of the best results that are mutually distinct in x_scale units."""
-    costs = np.array([r.cost if np.isfinite(r.cost) else np.inf for r in results])
-    chosen = []
-    for j in np.argsort(costs):
-        if not np.isfinite(costs[j]):
-            break
-        x = results[j].x
-        if all(
-            np.linalg.norm((x - results[k].x) / spec.x_scale) > min_dist for k in chosen
-        ):
-            chosen.append(int(j))
-        if len(chosen) == n_select:
-            break
-    return chosen
-
-
-def run_optimisation(x0, problem, max_nfev, tight=False):
+def run_optimisation(x0, problem, max_nfev=MAX_NFEV):
+    """Run one bounded least-squares fit from a single starting point."""
     spec = problem["spec"]
     return least_squares(
         residuals,
         x0,
         args=(problem,),
         bounds=(spec.lower, spec.upper),
-        method="trf",
         x_scale=spec.x_scale,
-        diff_step=1e-6,
-        loss="linear",
-        ftol=1e-12 if tight else 1e-8,
-        xtol=1e-12 if tight else 1e-8,
-        gtol=1e-10 if tight else 1e-6,
         max_nfev=max_nfev,
     )
 
 
 def rms(res):
+    """Root-mean-square of the weighted residuals (in original units)."""
     return np.sqrt(2 * res.cost / len(res.fun))
 
 
@@ -345,14 +318,12 @@ def calibrate(
     r_by_maturity,
     objective=OBJECTIVE,
     initial_guess=None,
-    n_starts=20,
-    n_refine=3,
-    screen_nfev=60,
-    refine_nfev=300,
+    n_starts=N_STARTS,
+    max_nfev=MAX_NFEV,
     min_weight_frac=MIN_WEIGHT_FRAC,
-    seed=42,
+    seed=SEED,
 ):
-    """Returns (parameters dict, best result, all stage-1 results, problem)."""
+    """Calibrate from multiple starts; return parameters, best fit, all fits and problem."""
     if initial_guess is None:
         initial_guess = spec.initial_guess
 
@@ -365,6 +336,7 @@ def calibrate(
         objective,
         min_weight_frac,
     )
+    # mult is used to report the RMS in readable units (vol pts, spreads, price units)
     unit, mult = OBJECTIVES[objective]
 
     print(
@@ -375,46 +347,24 @@ def calibrate(
         f"Underlying: {price_underlying:.4f} | q: {q:.6f} | method: {METHOD} "
         f"| objective: {objective}"
     )
-    print(f"Starts: {n_starts} | refine up to {n_refine} distinct basins")
+    print(f"Starting points: {n_starts} | maximum evaluations per fit: {max_nfev}")
     describe_problem(problem)
     print()
 
-    # ----- Stage 1: screening ------------------------------------------
-    stage1 = []
-    for i, x0 in enumerate(sample_starts(spec, initial_guess, n_starts, seed), 1):
-        res = run_optimisation(x0, problem, screen_nfev, tight=False)
-        stage1.append(res)
+    results = []
+    starts = sample_starts(spec, initial_guess, n_starts, seed)
+    for i, x0 in enumerate(starts, start=1):
+        res = run_optimisation(x0, problem, max_nfev)
+        results.append(res)
         print(
-            f"[screen {i:2d}/{n_starts}] cost={res.cost:.6f} "
-            f"(rms={rms(res) * mult:.4f} {unit}) nfev={res.nfev} status={res.status}"
+            f"[start {i:2d}/{n_starts}] cost={res.cost:.8f} "
+            f"(W.RMS={rms(res) * mult:.4f} {unit}) "
+            f"fevals={res.nfev} status={res.status}"
         )
 
-    chosen = select_distinct(spec, stage1, n_refine)
-    print(f"\n{len(chosen)} distinct basin(s) among the best screening results")
-
-    # ----- Stage 2: refinement -----------------------------------------
-    refined = []
-    for rank, j in enumerate(chosen, start=1):
-        res = run_optimisation(stage1[j].x, problem, refine_nfev, tight=True)
-        refined.append(res)
-        print(
-            f"[refine {rank}/{len(chosen)}] from start {j + 1}: cost={res.cost:.8f} "
-            f"nfev={res.nfev} status={res.status} ({res.message})"
-        )
-
-    # Parameters that differ across basins at equal cost are weakly identified.
-    basin_tab = pd.DataFrame(
-        [r.x for r in refined],
-        columns=spec.param_names,
-        index=[f"basin{i + 1}" for i in range(len(refined))],
-    )
-    basin_tab["cost"] = [r.cost for r in refined]
-    print("\nRefined basins")
-    print(basin_tab.to_string(float_format=lambda v: f"{v:.6f}"))
-
-    best = min(refined, key=lambda r: r.cost)
+    best = min(results, key=lambda result: result.cost)
     params = dict(zip(spec.param_names, best.x))
-    return params, best, stage1, problem
+    return params, best, results, problem
 
 
 # ---------------------------------------------------------
@@ -531,129 +481,6 @@ def flag_bounds(spec, x, tol=1e-3):
         print("  none")
 
 
-def parameter_uncertainty(res, flat_tol=1e-8, rcond=1e-12):
-    """
-    Indicative standard errors and correlations from the Jacobian at the
-    solution: cov = s^2 (J'J)^+ with s^2 = 2*cost / (m - n_free). Assumes
-    roughly iid residuals, so treat as a guide to identifiability.
-
-    Parameters on a bound get NaN; parameters with a (numerically) zero
-    Jacobian column are unidentified (std_err = inf). Returns (se, corr, cond).
-    """
-    J = res.jac
-    m, n = J.shape
-    free = res.active_mask == 0
-
-    col_norm = np.linalg.norm(J, axis=0)
-    flat = col_norm < flat_tol * max(col_norm.max(), 1e-300)
-    use = free & ~flat
-    nf = int(use.sum())
-
-    se = np.full(n, np.nan)
-    se[flat & free] = np.inf
-    corr = np.full((n, n), np.nan)
-    if nf == 0 or m <= nf:
-        return se, corr, np.nan
-
-    # unit-norm columns for numerical stability
-    d = col_norm[use]
-    Js = J[:, use] / d
-    s2 = 2.0 * res.cost / (m - nf)
-    cov = s2 * np.linalg.pinv(Js.T @ Js, rcond=rcond) / np.outer(d, d)
-
-    sef = np.sqrt(np.clip(np.diag(cov), 0, None))
-    with np.errstate(invalid="ignore", divide="ignore"):
-        cf = np.clip(cov / np.outer(sef, sef), -1.0, 1.0)
-
-    se[use] = sef
-    corr[np.ix_(use, use)] = cf
-
-    sv = np.linalg.svd(Js, compute_uv=False)
-    return se, corr, sv[0] / max(sv[-1], 1e-300)
-
-
-def report_uncertainty(spec, res, corr_threshold=0.95):
-    names = spec.param_names
-    se, corr, cond = parameter_uncertainty(res)
-    tab = pd.DataFrame(
-        {"value": res.x, "std_err": se, "|se/value|": np.abs(se / res.x)},
-        index=names,
-    )
-    print("\nIndicative parameter uncertainty (from Jacobian)")
-    print(tab.to_string(float_format=lambda v: f"{v:.5f}"))
-    print(f"Condition number of scaled Jacobian: {cond:.2e}")
-    if np.isinf(se).any():
-        print(
-            "Parameters with no sensitivity in the data (std_err = inf): "
-            + ", ".join(np.array(names)[np.isinf(se)])
-        )
-    if cond > 1e6:
-        print(
-            "Warning: Jacobian is ill-conditioned; some standard errors above "
-            "are likely too small (near-flat directions are truncated)."
-        )
-
-    pairs = [
-        (names[i], names[j], corr[i, j])
-        for i in range(len(names))
-        for j in range(i + 1, len(names))
-        if np.isfinite(corr[i, j]) and abs(corr[i, j]) > corr_threshold
-    ]
-    if pairs:
-        print(f"Parameter pairs with |corr| > {corr_threshold}:")
-        for a, b, c in pairs:
-            print(f"  {a} / {b}: {c:+.3f}")
-    else:
-        print(f"No parameter pairs with |corr| > {corr_threshold}")
-    return se
-
-
-def floor_sensitivity(
-    spec,
-    x_best,
-    market_data,
-    S0,
-    q,
-    r_by_maturity,
-    objective=OBJECTIVE,
-    floors=FLOOR_GRID,
-    max_nfev=200,
-):
-    """
-    Refit from the best solution under different weight floors and compare IV
-    errors on a common option set (the set does not depend on the floor).
-    """
-    rows = []
-    for f in floors:
-        prob = prepare_problem(spec, market_data, S0, q, r_by_maturity, objective, f)
-        res = run_optimisation(x_best, prob, max_nfev, tight=True)
-        err, ok = iv_errors(res.x, prob)
-        mny = moneyness(prob)
-
-        def rmse(mask):
-            e = err[mask & ok]
-            return np.sqrt(np.mean(e**2)) * 100 if len(e) else np.nan
-
-        rows.append(
-            {
-                "floor": f,
-                "n_floor": int(prob["at_floor"].sum()),
-                "IV_RMSE_all": rmse(np.ones(len(err), bool)),
-                "IV_RMSE_core(0.9-1.1)": rmse((mny >= 0.9) & (mny <= 1.1)),
-                "IV_RMSE_wing(<0.9)": rmse(mny < 0.9),
-                "IV_RMSE_wing(>1.1)": rmse(mny > 1.1),
-                **{n: res.x[spec.idx[n]] for n in spec.sensitivity_params},
-            }
-        )
-    out = pd.DataFrame(rows).set_index("floor")
-    print(
-        f"\n{objective} weight-floor sensitivity "
-        "(local refit from best solution; RMSE in vol pts)"
-    )
-    print(out.round(4).to_string())
-    return out
-
-
 # ---------------------------------------------------------
 # Main
 # ---------------------------------------------------------
@@ -662,10 +489,9 @@ def floor_sensitivity(
 def main(
     model=MODEL,
     objective=OBJECTIVE,
-    n_starts=20,
-    n_refine=3,
-    seed=42,
-    floor_sens=RUN_FLOOR_SENSITIVITY,
+    n_starts=N_STARTS,
+    max_nfev=MAX_NFEV,
+    seed=SEED,
 ):
     spec = SPECS[model]
     data = load_data(NoArb=True)
@@ -682,7 +508,7 @@ def main(
         r_by_maturity,
         objective=objective,
         n_starts=n_starts,
-        n_refine=n_refine,
+        max_nfev=max_nfev,
         seed=seed,
     )
 
@@ -697,21 +523,14 @@ def main(
     print(f"nfev={best.nfev} | cost={best.cost:.8f} | optimality={best.optimality:.3e}")
 
     flag_bounds(spec, best.x)
-    se = report_uncertainty(spec, best)
     if spec.structural_checks is not None:
         spec.structural_checks(parameters)
     diagnostics(best.x, problem, best)
 
-    if floor_sens and objective != "sse":
-        floor_sensitivity(spec, best.x, df, S0, q, r_by_maturity, objective)
-
-    # The vega fit keeps the file name used by the plotting scripts.
     out_file = spec.output_file
     if objective != "vega":
         out_file = out_file.replace(".csv", f"_{objective}.csv")
-    pd.DataFrame({"value": best.x, "std_err": se}, index=spec.param_names).to_csv(
-        out_file
-    )
+    pd.DataFrame({"value": best.x}, index=spec.param_names).to_csv(out_file)
     print(f"\nSaved parameters to {out_file}")
     return parameters, best, problem
 
@@ -720,18 +539,8 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--model", choices=list(SPECS), default=MODEL)
     ap.add_argument("--objective", choices=list(OBJECTIVES), default=OBJECTIVE)
-    ap.add_argument("--n-starts", type=int, default=20)
-    ap.add_argument("--n-refine", type=int, default=3)
-    ap.add_argument("--seed", type=int, default=42)
-    ap.add_argument(
-        "--no-floor-sensitivity", action="store_true", help="skip floor sensitivity"
-    )
+    ap.add_argument("--n-starts", type=int, default=N_STARTS)
+    ap.add_argument("--max-nfev", type=int, default=MAX_NFEV)
+    ap.add_argument("--seed", type=int, default=SEED)
     a = ap.parse_args()
-    main(
-        a.model,
-        a.objective,
-        a.n_starts,
-        a.n_refine,
-        a.seed,
-        floor_sens=RUN_FLOOR_SENSITIVITY and not a.no_floor_sensitivity,
-    )
+    main(a.model, a.objective, a.n_starts, a.max_nfev, a.seed)

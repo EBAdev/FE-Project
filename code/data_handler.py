@@ -74,8 +74,9 @@ def load_data(
 
         if verbose:
             print("Inferred discount rates by maturity:")
-            for exdate, r in inferred_r.items():
-                print(f"{exdate.date()}: {r:.4%}")
+            # sort and print the inferred discount rates by maturity
+            for exdate, r in sorted(inferred_r.items()):
+                print(f"  {exdate.date()}: {r:.4%}")
             print(f"Inferred dividend yield (single q): {inferred_q:.4%}")
         return_value["r_by_maturity"] = inferred_r
         return_value["q"] = inferred_q
