@@ -319,6 +319,7 @@ def remove_arbitrage_violations(
             best_offer=("best_offer", "mean"),
         )
         n_converted = len(puts)
+        n_original_calls = len(calls)
 
     n_total_calls = len(df)
 
@@ -382,6 +383,7 @@ def remove_arbitrage_violations(
         print(f"Initial observations:               {n_start}")
         print(f"Removed (invalid K/T/no r):         {n_invalid}")
         print(f"Removed ITM:                        {n_itm_removed}")
+        print(f"Original calls:                     {n_original_calls}")
         print(f"Puts converted to calls:            {n_converted}")
         print(f"Total call observations:            {n_total_calls}")
         print(f"Removed by price bounds:            {n_bounds_removed}")

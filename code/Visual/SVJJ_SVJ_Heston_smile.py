@@ -104,7 +104,7 @@ def plot_smile_comparison():
     fig, ax = plt.subplots(figsize=(11, 7))
 
     ax.plot(svjj_lm, svjj_iv * 100, color="navy", linewidth=2, label="SVJJ model")
-    ax.plot(svj_lm, svj_iv * 100, color="orange", linewidth=2, label="SVJJ model")
+    ax.plot(svj_lm, svj_iv * 100, color="orange", linewidth=2, label="SVJ model")
     ax.plot(
         heston_lm,
         heston_iv * 100,
@@ -130,8 +130,7 @@ def plot_smile_comparison():
     ax.set_xlabel(r"Log-moneyness $\log(K/S_0)$")
     ax.set_ylabel("Implied volatility (%)")
     ax.set_title(
-        f"SVJJ vs Heston Implied Volatility Smile - "
-        f"{exdate.date()} (T = {T:.3f} years)"
+        f"Implied volatility smiles for SPX on " f"{exdate.date()} (T = {T:.3f} years)"
     )
     ax.grid(alpha=0.25)
     ax.legend()
