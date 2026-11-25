@@ -29,37 +29,16 @@ their joint distribution specified by
 where $\mu_v>0$, $\sigma\geq 0$, and $\mu_s,\rho_j\in\mathbb{R}$.
 
 Since the model is specified under the risk-neutral measure, the discounted stock price must satisfy
-the martingale condition. This imposes the following restriction on the expected jump size.
+the martingale condition. This imposes the following restriction on the expected jump size, whose
+proof is in Appendix \ref{app:proof-mg-cond}
 \begin{proposition}
+\label{prop:svjj-mg-cond}
 The martingale condition on the discounted stock price $M_t=\ee^{-(r-q)t}S_t$. implies,
 \[ 
 \overline{\mu} = \frac{\ee^{\mu_s + \frac{1}{2} \sigma^2 }}{1-\rho_j \mu_v} -1
 .\]
 \end{proposition}
-\begin{proof}
-  By the Itô product rule, the dynamics of $M_t$ are:
-  \[
-    \frac{\d M_t}{M_{t-}} = -\overline{\mu}\lambda\d t +\sqrt{V_t}\d B_t +(\ee^{J^S}-1)\d N_t.
-  \]
-  Since the jumps are driven by a marked Poisson process, their expected contribution to the drift
-  per unit of time is, the expected contribution from the jumps per unit of time, i.e.
-  $\lambda\E[\ee^{J^S}-1]\d t$. The drift of $M_t$ is therefore $\lambda(
-  \mathbb{E}[\ee^{J^S}-1]-\overline{\mu})\d t.$ Under $\Q$ the discounted stock price is a
-  martingale, hence the martingale condition implies
-  \[ 
-    \overline{\mu}=\mathbb{E}[\ee^{J^S}-1].
-  \]
-  Using the conditional distribution of $J^S$, we obtain
-  \[
-    \mathbb{E}[\ee^{J^S}]
-    =\mathbb{E}\left[ \mathbb{E}[\ee^{J^S}\mid J^V] \right]
-    =\ee^{\mu_s+\frac{1}{2}\sigma^2} \mathbb{E}[\ee^{\rho_jJ^V}]
-    =\frac{\ee^{\mu_s+\frac{1}{2}\sigma^2}} {1-\rho_j\mu_v},
-  \]
-  where the last equality uses the moment generating function of $J^{V} \sim \exp(\mu_v)$.
-  Subtracting one gives the stated result.
-\qed
-\end{proof}
+
 \begin{remark}[Removing correlation of the Brownian motions]
   Let $Y_t=\log S_t$ denote the log-price. Applying Itô's formula for jump-diffusions gives
   \begin{align}
@@ -141,8 +120,10 @@ H_0 =
 (H_1)_{22} =
 \begin{pmatrix}0\\\sigma_v^2\end{pmatrix}.
 \]
-What remains is to specify the jump distribution through its transform.
+What remains is to specify the jump distribution through its transform. We have the following Lemma,
+whose proof is in Appendix \ref{app:proof-jump-trans}.
 \begin{lemma}
+  \label{lem:svjj-jump-trans}
   The jump transform for the SVJJ model is:
   \begin{equation} 
   \phi(c)  = \frac{\ee^{\mu_s c_1 + \frac{1}{2} \sigma^2 c_1^2 }}{1-\mu_v c_2 -
@@ -154,24 +135,7 @@ What remains is to specify the jump distribution through its transform.
   \label{eq:svjj-jump-trans}
   .\end{equation}
 \end{lemma}
-\begin{proof}
-By definition, the jump transform is
-\[
-\phi(c)=\E\left[\exp(c_1J^S+c_2J^V)\right].
-\]
-Conditioning on \(J^V\) and using the conditional normal distribution of \(J^S\), we obtain
-\begin{align*}
-\phi(c)
-&=\E\left[ e^{c_2J^V} \E\left[\ee^{c_1J^S}\mid J^V\right] \right]
-&=\ee^{\mu_sc_1+\frac12\sigma^2c_1^2} \E\left[\ee^{(c_2+\rho_jc_1)J^V}\right].
-\end{align*}
-Since $J^V\sim\exp(\mu_v)$, its moment-generating function gives
-\[
-\E\left[\ee^{(c_2+\rho_jc_1)J^V}\right] = \frac{1}{1-\mu_v(c_2+\rho_jc_1)}.
-\]
-Combining these expressions yields \eqref{eq:svjj-jump-trans}. 
-\qed
-\end{proof}
+
 We can now apply the affine transform result from \Cref{th:ajd-cf-sol}. If the characteristic $\chi
 = (K,H,l,\theta,\rho)$ are well-behaved, the extended characteristic function admits the
 exponential-affine representation

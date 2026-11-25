@@ -1,14 +1,43 @@
 \chapter{Introduction}
 \label{ch:intro}
-A high level overview of why we care as well as what we seek to answer. In particular a more fluffy
-description of what an AJD model is and the usefullness of the extended transform.
+A central task in financial engineering is to build models that reproduce observed market
+options. A good model must do two things. It must be complex enough to match the observed
+cross-section of option prices, in particular the implied volatility. It must also be tractable
+enough so that prices can be computed quickly and reliably, since calibration requires doing so.
 
+Affine jump-diffusions (AJDs) are a class of models that a balance between the two.
+In an AJD, the drift, the instantaneous covariance, the jump intensity and the short rate are all
+affine functions of the state vector. This structure allows for an surprising amount of tractability
+while still allowing for stochastic volatility, jumps in prices and jumps in volatility.
 
-
+The key result is the analysis of \parencite{Duffie2000}, that shows that the extended transform
 \begin{equation}
-  \phi^{\chi}(v,u,X_t, t, T) = \E\left[  \ee^{-\int_{t}^{T} R(X_s, s) \d s}(v_0 + v_1 \cdot X_T)
-  \ee^{u \cdot X_T} \mid  \F_t\right]
-  \label{eq:ex-transform}
+  \phi^{\chi}(v,u,X_t,t,T)
+  = \mathbb{E}\!\left[ \ee^{-\int_t^T R(X_s)\,\mathrm{d}s}\,(v_0+v_1\cdot X_T)\,\ee^{u\cdot X_T} \,\middle|\, \mathcal{F}_t \right]
+  \label{eq:extended-transform}
 \end{equation}
+is exponential-affine in the state variables, with coefficients that solve a system of ordinary
+differential equations (ODEs), for some models the ODEs even have closed-form solutions.
 
+The extended transform is a powerful tool, by considering special cases of this transform one can
+obtain different quantities, e.g:
+\begin{itemize}
+  \item With $R = v_1 = 0, v_1 = 1$ $\phi^{\chi}$ becomes the we get characteristic function of $X$.
+  \item Putting $v_0 = 1, v_1 = u =0$ yields the risk-free zero coupon bond price with maturity $T$.
+\end{itemize}
 
+This project studies this modelling approach from theory to data. We first present the AJD framework
+and the affine transform formula of \parencite{Duffie2000}. We then derive the \parencite{Lewis2001}
+pricing formula, which turns the characteristic function into a European call price through a single
+integral. As an example of AJD models we study the particularly tractable SVJJ model, in which the
+log-price and the variance jump simultaneously. We derive the models jump transform and the
+present the closed-form solution of its Riccati equations. Finally, we calibrate SVJJ to S\&P~500
+index options observed on 13 November 2019 and compare it with two simpler benchmarks: the SVJ
+model, which has no variance jumps, and the \parencite{Heston1993} model, which has no jumps at
+all.
+
+The rest of the project is organised as follows. \Cref{ch:affine} introduces AJD models, the
+extended transform and Fourier pricing. \Cref{ch:svjj} presents the SVJJ model.
+\Cref{ch:calibration} describes the data and filtering procedure, the calibration setup and
+the results. \Cref{ch:conclusion} concludes. Additional results and details are available in the
+appendices.

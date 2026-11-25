@@ -1,12 +1,11 @@
 import numpy as np
 import pandas as pd
-from scipy.optimize import minimize
-
 from option_pricing import (
     calculate_implied_volatility,
     implied_call_price,
     implied_put_price,
 )
+from scipy.optimize import minimize
 
 FILE_PATH = "Data20191113.xlsx"
 
@@ -160,81 +159,6 @@ def _clean_maturity_slice(group, S, r, q, T, tol=1e-8):
     return group, n_removed, n_mono, n_conv
 
 
-def _calendar_drops(slices, S, r_map, q, tol=1e-8, rule="wide"):
-    """
-    Calendar-spread condition at fixed forward moneyness.
-
-    With F_T = S exp((r-q)T), y = K / F_T and c(y, T) = C / (S exp(-qT)),
-    the call price is non-decreasing in maturity iff, for T2 > T1,
-        c(y, T2) >= c(y, T1)   for all y.
-
-    c(., T2) is convex in y, so linear interpolation between its nodes
-    (including the anchor c(0) = 1) overestimates it. Any T1 point lying
-    above that interpolation is therefore a genuine violation.
-
-    Returns a list of (exdate, strike) to drop: for each adjacent pair of
-    maturities, the point involved in the largest violation.
-    rule: "wide" (drop the wider bid-ask point of the pair),
-          "short" (drop the shorter-maturity point) or
-          "long" (drop the longer-maturity point).
-    """
-    mats = sorted(slices)
-    info = {}
-    for ex in mats:
-        g = slices[ex]
-        T = g["time_to_maturity"].iloc[0]
-        F = S * np.exp((r_map[ex] - q) * T)
-        scale = S * np.exp(-q * T)
-        if {"best_bid", "best_offer"}.issubset(g.columns):
-            rel_spread = (g["best_offer"] - g["best_bid"]).to_numpy() / scale
-        else:
-            rel_spread = np.zeros(len(g))
-        info[ex] = {
-            "strike": g["Strike"].to_numpy(),
-            "y": g["Strike"].to_numpy() / F,
-            "c": g["Mid"].to_numpy() / scale,
-            "spread": rel_spread,
-        }
-
-    drops = []
-    for e1, e2 in zip(mats[:-1], mats[1:]):
-        a, b = info[e1], info[e2]
-        y2 = np.concatenate(([0.0], b["y"]))
-        c2 = np.concatenate(([1.0], b["c"]))
-
-        inside = a["y"] <= y2.max()
-        if not inside.any():
-            continue
-
-        interp = np.full(len(a["y"]), np.nan)
-        interp[inside] = np.interp(a["y"][inside], y2, c2)
-        gap = np.where(inside, a["c"] - interp, -np.inf)
-
-        if gap.max() <= tol:
-            continue
-
-        i = int(np.argmax(gap))
-
-        # nearest real node of the longer maturity
-        pos = int(np.searchsorted(b["y"], a["y"][i]))
-        cand = [p for p in (pos - 1, pos) if 0 <= p < len(b["y"])]
-        j = min(cand, key=lambda p: abs(b["y"][p] - a["y"][i]))
-
-        if rule == "short":
-            drop_short = True
-        elif rule == "long":
-            drop_short = False
-        else:
-            drop_short = a["spread"][i] >= b["spread"][j]
-
-        if drop_short:
-            drops.append((e1, a["strike"][i]))
-        else:
-            drops.append((e2, b["strike"][j]))
-
-    return drops
-
-
 def remove_arbitrage_violations(
     df,
     price_underlying,
@@ -355,17 +279,7 @@ def remove_arbitrage_violations(
         n_conv_found += n_c
         slices[ex] = g
 
-    # TODO: figure out if we need calendar spread filtering.
-    # # 4b. calendar-spread condition across adjacent maturities
-    # if len(slices) >= 2:  # need at least 2 maturities
-    #     drops = _calendar_drops(slices, S, r_map, q, calendar_tol, calendar_rule)
-    #
-    #     for ex, strike in drops:
-    #         g = slices[ex]
-    #         slices[ex] = g[g["Strike"] != strike]
-    #         n_calendar_removed += 1
-
-    # 4c. drop maturities that are too thin to define a smile
+    # 4b. drop maturities that are too thin to define a smile
     for ex in list(slices):
         if len(slices[ex]) < min_obs:
             n_maturity_removed += len(slices[ex])

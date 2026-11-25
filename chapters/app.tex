@@ -1,138 +1,148 @@
-\chapter{Proof of Theorem 2.1}
-\label{app:proof-of-ex-transform}
+\chapter{Calibration tables}
+\label{app:calibration-tables}
 
-\begin{proof}
-  Following \parencite{Duffie2000}, we show that the process
-  \[
-    \Psi_t =
-    \ee^{-\int_0^t R(X_s)\d s}
-    \ee^{\alpha(t)+\beta(t)^\top X_t}
-  \]
-  is a martingale. The desired result then follows from its
-  terminal value.
+\begin{table}[H]
+  \centering
+  \begin{tabular}{lr}
+    \toprule
+    \textbf{Filtering step} & \textbf{Observations} \\
+    \midrule
+    Initial observations & 3,778 \\
+    Observations after cleaning & 3,665 \\
+    \midrule
+    Removed ITM options & 1,889 \\
+    \quad Original call observations & 417 \\
+    \quad Puts converted to calls & 1,359 \\
+    Total call observations & 1,776 \\
+    \midrule
+    Removed by price bounds & 0 \\
+    Removed by slope/convexity & 486 \\
+    \quad Monotonicity violations found & 12 \\
+    \quad Convexity violations found & 7,449 \\
+    Removed by maturity filter & 0 \\
+    \midrule
+    \textbf{Remaining observations} & \textbf{1,290} \\
+    Remaining maturities & 12 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Summary of option data filtering.}
+  \label{tab:option-filtering}
+\end{table}
 
-  To apply It\^o's formula, let $N(\d t,\d z)$ denote the
-  integer-valued random measure associated with the jumps of $X$,
-  with compensator $\lambda(X_{t-})\nu(\d z)\d t$, and define
-  \[
-    \widetilde N(\d t,\d z)
-    =N(\d t,\d z)-\lambda(X_{t-})\nu(\d z)\d t.
-  \]
-  For a sufficiently smooth function $f:[0,T]\times D\to\C$,
-  It\^o's formula for jump diffusions gives
-  \begin{align*}
-    \d f(t,X_t)
-    ={}&
-    \Bigg[
-      \frac{\partial f}{\partial t}
-      +\nabla f^\top\mu
-      +\frac{1}{2}\mathrm{Tr}\left(
-        \sigma\sigma^\top\nabla^2 f
-      \right)\\
-      &+\lambda(X_{t-})\int_{\R^n}
-      \left(f(t,X_{t-}+z)-f(t,X_{t-})\right)
-      \nu(\d z)
-    \Bigg]\d t\\
-    &+\nabla f^\top\sigma\d W_t\\
-    &+\int_{\R^n}
-      \left(f(t,X_{t-}+z)-f(t,X_{t-})\right)
-      \widetilde N(\d t,\d z),
-  \end{align*}
-  where the derivatives and coefficients in the drift and diffusion
-  terms are evaluated at $(t,X_{t-})$ and $X_{t-}$, respectively.
+\begin{table}[H]
+    \centering
+    \begin{tabular}{lr}
+        \toprule
+        Maturity & Discount Rate (\%) \\
+        \midrule
+        2019-12-20 & 1.6367 \\
+        2020-01-17 & 2.2623 \\
+        2020-02-21 & 2.1119 \\
+        2020-03-20 & 2.0381 \\
+        2020-04-17 & 2.0846 \\
+        2020-06-19 & 1.9729 \\
+        2020-09-18 & 1.9206 \\
+        2020-10-16 & 1.9557 \\
+        2020-11-20 & 1.9104 \\
+        2020-12-18 & 1.8774 \\
+        2021-06-18 & 1.8524 \\
+        2021-12-17 & 1.8363 \\
+        \midrule
+        Inferred dividend yield & 1.8914 \\
+        \bottomrule
+    \end{tabular}
+    \caption{Inferred discount rates by maturity}
+    \label{tab:inferred_r_q}
+\end{table}
 
-  Applying this formula to
-  \[
-    f(t,x)=\ee^{\alpha(t)+\beta(t)^\top x},
-  \]
-  we have
-  \begin{align*}
-    \frac{\partial f}{\partial t}
-    &=f(t,x)(\alpha'(t)+\beta'(t)^\top x),\\
-    \nabla f&=f(t,x)\beta(t),\\
-    \nabla^2 f&=f(t,x)\beta(t)\beta(t)^\top,\\
-    f(t,x+z)-f(t,x)
-    &=f(t,x)(\ee^{\beta(t)^\top z}-1).
-  \end{align*}
-  In particular, the jump contribution satisfies
-  \[
-    \int_{\R^n}(f(t,x+z)-f(t,x))\nu(\d z)
-    =f(t,x)(\theta(\beta(t))-1).
-  \]
+\begin{table}[H]
+  \centering
+  \begin{tabular}{lcccccc}
+    \toprule
+    Weight Scheme & Model & IV RMSE &IV MAE &IV Bias& W.RMS & Parameters at bounds\\
+    \midrule
+    SSE & SVJJ & 1.122 &0.661 & 0.186& 2.048 & $\sigma$ \\
+    SSE & SVJ & 1.268 & 0.691& 0.272& 2.068 & None \\
+    SSE & Heston & 1.203 &0.784&-0.091& 2.351 & None \\
+    \midrule
+    Bid-Ask& SVJJ & 1.213 & 0.588&-0.270&2.689 & $\rho, \overline{v}$ \\
+    Bid-Ask& SVJ & 0.994 &0.504&-0.021& 2.859 & None \\
+    Bid-Ask& Heston & 1.020 &0.601&-0.108& 3.376 & None \\
+    \midrule
+    Vega & SVJJ & 0.953 &0.452&-0.148& 0.439 & None \\
+    Vega & SVJ & 0.955 &0.467&-0.142& 0.455 & None \\
+    Vega & Heston & 0.993 &0.578&-0.211& 0.585& None \\
+    \bottomrule
+  \end{tabular}
+  \caption{Calibration performance for the different weighting schemes.
+    IV figures are measured in volatility points.
+    W.RMS denotes the weighted root mean square residual, and is measured in
+    price units for SSE and Bid-Ask and in volatility points
+  for Vega.}
+  \label{tab:calibration-weightsheme}
+\end{table}
 
-  Since the discount factor
-  $\ee^{-\int_0^t R(X_s)\d s}$ is continuous and of finite
-  variation, the product rule yields
-  \begin{align*}
-    \d\Psi_t
-    ={}&\Psi_{t-}\Bigg[
-      \alpha'(t)+\beta'(t)^\top X_{t-}
-      +\beta(t)^\top\mu(X_{t-})\\
-      &+\frac{1}{2}\beta(t)^\top
-      \sigma(X_{t-})\sigma(X_{t-})^\top\beta(t)
-      -R(X_{t-})\\
-      &+\lambda(X_{t-})(\theta(\beta(t))-1)
-    \Bigg]\d t\\
-    &+\eta_t\d W_t
-    +\int_{\R^n}\Psi_{t-}
-      (\ee^{\beta(t)^\top z}-1)
-      \widetilde N(\d t,\d z),
-  \end{align*}
-  where
-  \[
-    \eta_t=\Psi_{t-}\beta(t)^\top\sigma(X_{t-}).
-  \]
 
-  By substituting the affine specifications of $\mu$,
-  $\sigma\sigma^\top$, $\lambda$ and $R$, the drift coefficient
-  becomes
-  \begin{align*}
-    &\alpha'(t)+K_0^\top\beta(t)
-      +\frac{1}{2}\beta(t)^\top H_0\beta(t)
-      -\rho_0+l_0(\theta(\beta(t))-1)\\
-    &\quad+
-    \left[
-      \beta'(t)+K_1^\top\beta(t)
-      +\frac{1}{2}H_1\beta(t)
-      -\rho_1+l_1(\theta(\beta(t))-1)
-    \right]^\top X_{t-}.
-  \end{align*}
-  By the ODEs for $\alpha$ and $\beta$, this expression vanishes.
-  Consequently,
-  \[
-    \d\Psi_t
-    =\eta_t\d W_t+
-    \int_{\R^n}\Psi_{t-}
-    (\ee^{\beta(t)^\top z}-1)\widetilde N(\d t,\d z),
-  \]
-  and hence $\Psi$ is a local martingale.
+\begin{table}[ht]
+\centering
+\begin{tabular}{lrlr}
+\toprule
+Parameter & Value & Parameter & Value \\
+\midrule
+$\lambda$  & $1.2098$  & $\sigma$ & $0.0137$ \\
+$\rho$     & $-0.8435$ & $\rho_j$ & $-0.7880$ \\
+$v$        & $0.0125$  & $\mu_v$  & $0.0651$ \\
+$\kappa_v$ & $2.7564$  & $V_0$    & $0.0117$ \\
+$\sigma_v$ & $0.4748$  & $\mu_s$  & $0.0227$ \\
+\bottomrule
+\end{tabular}
+\caption{Calibrated SVJJ parameters (Vega-weighted objective).}
+\label{tab:svjj-params}
+\end{table}
 
-  By the well-behavedness assumption, the integrability conditions
-  required for the stochastic integrals to be true martingales
-  are satisfied. We refer to Definition 1 and Lemma 1 in Appendix A
-  of \parencite{Duffie2000} for the precise conditions. Thus,
-  $\Psi$ is a martingale.
 
-  Finally, using the terminal conditions $\alpha(T)=0$ and
-  $\beta(T)=u$, we obtain
+\global\def\lastproofcolor{formulabordercolor}
+\chapter{Proofs}
+\section{Proof of \texorpdfstring{\Cref{prop:svjj-mg-cond}}{SVJJ MG Cond}}
+\label{app:proof-mg-cond}
+  By the Itô product rule, the dynamics of $M_t$ are:
   \[
-    \Psi_T=
-    \ee^{-\int_0^T R(X_s)\d s}\ee^{u^\top X_T}.
+    \frac{\d M_t}{M_{t-}} = -\overline{\mu}\lambda\d t +\sqrt{V_t}\d B_t +(\ee^{J^S}-1)\d N_t.
   \]
-  Hence, for $t\leq T$,
-  \begin{align*}
-    &\E\left[
-      \ee^{-\int_0^T R(X_s)\d s}\ee^{u^\top X_T}
-      \,\middle|\,\F_t
-    \right]\\
-    &\qquad=\Psi_t
-    =\ee^{-\int_0^t R(X_s)\d s}
-      \ee^{\alpha(t)+\beta(t)^\top X_t}.
-  \end{align*}
-  Multiplying by $\ee^{\int_0^t R(X_s)\d s}$ gives
+  Since the jumps are driven by a marked Poisson process, their expected contribution to the drift
+  per unit of time is, the expected contribution from the jumps per unit of time, i.e.
+  $\lambda\E[\ee^{J^S}-1]\d t$. The drift of $M_t$ is therefore $\lambda(
+  \mathbb{E}[\ee^{J^S}-1]-\overline{\mu})\d t.$ Under $\Q$ the discounted stock price is a
+  martingale, hence the martingale condition implies
+  \[ 
+    \overline{\mu}=\mathbb{E}[\ee^{J^S}-1].
+  \]
+  Using the conditional distribution of $J^S$, we obtain
   \[
-    \psi^\chi(u,X_t,t,T)
-    =\ee^{\alpha(t)+\beta(t)^\top X_t},
+    \mathbb{E}[\ee^{J^S}]
+    =\mathbb{E}\left[ \mathbb{E}[\ee^{J^S}\mid J^V] \right]
+    =\ee^{\mu_s+\frac{1}{2}\sigma^2} \mathbb{E}[\ee^{\rho_jJ^V}]
+    =\frac{\ee^{\mu_s+\frac{1}{2}\sigma^2}} {1-\rho_j\mu_v},
   \]
-  which establishes the result.
-\end{proof}
+  where the last equality uses the moment generating function of $J^{V} \sim \exp(\mu_v)$.
+  Subtracting one gives the stated result.
+\qed
+\section{Proof of \texorpdfstring{\Cref{lem:svjj-jump-trans}}{SVJJ Jump transform}}
+\label{app:proof-jump-trans}
+By definition, the jump transform is
+\[
+\phi(c)=\E\left[\exp(c_1J^S+c_2J^V)\right].
+\]
+Conditioning on \(J^V\) and using the conditional normal distribution of \(J^S\), we obtain
+\begin{align*}
+\phi(c)
+&=\E\left[ e^{c_2J^V} \E\left[\ee^{c_1J^S}\mid J^V\right] \right]
+&=\ee^{\mu_sc_1+\frac12\sigma^2c_1^2} \E\left[\ee^{(c_2+\rho_jc_1)J^V}\right].
+\end{align*}
+Since $J^V\sim\exp(\mu_v)$, its moment-generating function gives
+\[
+\E\left[\ee^{(c_2+\rho_jc_1)J^V}\right] = \frac{1}{1-\mu_v(c_2+\rho_jc_1)}.
+\]
+Combining these expressions yields \eqref{eq:svjj-jump-trans}. 
+\qed
+

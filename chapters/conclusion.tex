@@ -1,0 +1,42 @@
+\chapter{Conclusion}
+\label{ch:conclusion}
+
+This project studied Affine Jump-Diffusion (AJD) models, with a focus on how their transform
+structure gives both efficient pricing and calibration to market option data. 
+By leaning on \parencite{Duffie2000}, we saw that the extended transform is exponential-affine in
+the state variable, with coefficients given by a system of ODEs. Combined with the
+\parencite{Lewis2001} formula, this gives European option prices as a single integral of the
+characteristic function. For the SVJJ model, these ODEs admit closed-form solutions, hence no
+numerical ODE solver is needed. 
+
+We then calibrated SVJJ, SVJ and Heston to 1,290 out-of-the-money SPX option quotes across 12
+maturities on 13 November 2019, after filtering for no-arbitrage violations. This analysis led to
+three main findings:
+
+\paragraph{The weighting scheme matters.}
+The Vega-weighted objective gave the best overall fit in implied volatility for all three models,
+and it was the only scheme under which no parameters hit their bounds for any model. We therefore
+used it as the primary objective. Under Vega weighting, SVJJ attains an implied-volatility RMSE of
+0.953 volatility points, against 0.955 for SVJ and 0.993 for Heston. The mean absolute error shows a
+larger gap (0.452, 0.467 and 0.578, respectively).
+
+\paragraph{Model complexity improves fit, but not uniformly.}
+Adding jumps to the log-price improved the fit relative to Heston, most visibly in the left wing at
+short maturities, where Heston underestimates the skew. The extra variance-jump component
+of SVJJ gives only a marginal improvement over SVJ under Vega weighting, and under bid-ask weighting
+SVJJ fits worse than both simpler models, with two parameters at their bounds. More flexible models
+do not automatically calibrate better. This is likely a sign of a difficult objective landscape in
+which the optimiser does not always find a minimum.
+
+\paragraph{All three models struggle in the wings.}
+They capture the general shape of the smile and fit the region around the money well, but they
+deviate substantially in the far wings. At the longest maturity, all three understate the implied
+volatility of deep OTM options.
+
+\paragraph{Limitations \&  Extensions.}
+Our analysis considered a single trading day, so the results may not carry over to other market
+regimes. Even though we used 20 random starting points during calibration, we cannot rule out that
+better local minima exist. Furthermore, the comparison is in-sample, so some of the flexibility of
+SVJJ may reflect overfitting rather than genuine explanatory power. These limitations suggest
+natural extensions. One is to calibrate across multiple dates, or more data to study parameter
+stability and out-of-sample performance. Another test is to calibrate richer AJD specifications.

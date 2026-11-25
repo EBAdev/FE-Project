@@ -67,60 +67,8 @@ the widest bid-ask spread.
 \end{itemize}
 
 An outline of how much data was removed in each step of the filering process is available in
-\Cref{tab:option-filtering}
-\begin{table}
-  \centering
-  \begin{tabular}{lr}
-    \toprule
-    \textbf{Filtering step} & \textbf{Observations} \\
-    \midrule
-    Initial observations & 3,778 \\
-    Observations after cleaning & 3,665 \\
-    \midrule
-    Removed ITM options & 1,889 \\
-    \quad Original call observations & 417 \\
-    \quad Puts converted to calls & 1,359 \\
-    Total call observations & 1,776 \\
-    \midrule
-    Removed by price bounds & 0 \\
-    Removed by slope/convexity & 486 \\
-    \quad Monotonicity violations found & 12 \\
-    \quad Convexity violations found & 7,449 \\
-    Removed by maturity filter & 0 \\
-    \midrule
-    \textbf{Remaining observations} & \textbf{1,290} \\
-    Remaining maturities & 12 \\
-    \bottomrule
-  \end{tabular}
-  \caption{Summary of option data filtering.}
-  \label{tab:option-filtering}
-\end{table}
-The inferred dividend yield and interest rates are available in \Cref{tab:inferred_r_q}
-\begin{table}
-    \centering
-    \begin{tabular}{lr}
-        \toprule
-        Maturity & Discount Rate (\%) \\
-        \midrule
-        2019-12-20 & 1.6367 \\
-        2020-01-17 & 2.2623 \\
-        2020-02-21 & 2.1119 \\
-        2020-03-20 & 2.0381 \\
-        2020-04-17 & 2.0846 \\
-        2020-06-19 & 1.9729 \\
-        2020-09-18 & 1.9206 \\
-        2020-10-16 & 1.9557 \\
-        2020-11-20 & 1.9104 \\
-        2020-12-18 & 1.8774 \\
-        2021-06-18 & 1.8524 \\
-        2021-12-17 & 1.8363 \\
-        \midrule
-        Inferred dividend yield & 1.8914 \\
-        \bottomrule
-    \end{tabular}
-    \caption{Inferred discount rates by maturity}
-    \label{tab:inferred_r_q}
-\end{table}
+\Cref{tab:option-filtering}, the inferred dividend yield and interest rates are available in
+\Cref{tab:inferred_r_q} of \Cref{app:calibration-tables}.
 The data processing is implemented in \verb|data_handler.py|. Model implementations live in the
 \verb|Models/*.py|, directory, and Fourier pricers are in \verb|Fourier.py|. Note that the code
 implements other Fourier pricers than just the Lewis formular discussed in \Cref{ch:affine}
@@ -160,7 +108,8 @@ During calibration we have explored three types of weight schemes,
 \item[Vega:] $w_{ij} =(\text{BS Vega}_{ij})^{-1}$. Each observation is weighted by the
   Black-Scholes Vega.
 \end{description}
-The calibration results are reported in \Cref{tab:calibration-weightsheme}. The Vega-weighted
+The calibration results are reported in \Cref{tab:calibration-weightsheme} of
+\Cref{app:calibration-tables}. The Vega-weighted
 objective seems to provide the best overall fit in implied volatility for all three models. We
 therefore use Vega weighting as the primary calibration objective, for the continued analysis.
 
@@ -168,32 +117,6 @@ An interesting observation is that SVJJ doesn't outperform the simpler models in
 In particular, under bid-ask weighting, SVJJ produces a worse IV fit than
 both SVJ and Heston, with two parameters reaching their bounds. This suggests that
 increased model complexity doesn't always imply improved calibration.
-\begin{table}
-  \centering
-  \begin{tabular}{lcccccc}
-    \toprule
-    Weight Scheme & Model & IV RMSE &IV MAE &IV Bias& W.RMS & Parameters at bounds\\
-    \midrule
-    SSE & SVJJ & 1.122 &0.661 & 0.186& 2.048 & $\sigma$ \\
-    SSE & SVJ & 1.268 & 0.691& 0.272& 2.068 & None \\
-    SSE & Heston & 1.203 &0.784&-0.091& 2.351 & None \\
-    \midrule
-    Bid-Ask& SVJJ & 1.213 & 0.588&-0.270&2.689 & $\rho, \overline{v}$ \\
-    Bid-Ask& SVJ & 0.994 &0.504&-0.021& 2.859 & None \\
-    Bid-Ask& Heston & 1.020 &0.601&-0.108& 3.376 & None \\
-    \midrule
-    Vega & SVJJ & 0.953 &0.452&-0.148& 0.439 & None \\
-    Vega & SVJ & 0.955 &0.467&-0.142& 0.455 & None \\
-    Vega & Heston & 0.993 &0.578&-0.211& 0.585& None \\
-    \bottomrule
-  \end{tabular}
-  \caption{Calibration performance for the different weighting schemes.
-    IV figures are measured in volatility points.
-    W.RMS denotes the weighted root mean square residual, and is measured in
-    price units for SSE and Bid-Ask and in volatility points
-  for Vega.}
-  \label{tab:calibration-weightsheme}
-\end{table}
 \Cref{fig:iv-smile-short,fig:iv-smile-long} compares the calibrated implied volatility smiles for
 the shortest and longest maturities. All three models capture the general shape of the smiles,
 particularly close to the ATM region. 
@@ -207,17 +130,35 @@ flexibility.
 
 \begin{figure}[htbp]
 \centering
-    \includegraphics[width=\linewidth]{figures/iv-smile-short.png}
+    \includegraphics[width=0.8\linewidth]{figures/iv-smile-short.png}
     \caption{Shortest maturity available}
     \label{fig:iv-smile-short}
 \end{figure}
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\linewidth]{figures/iv-smile-long.png}
+  \includegraphics[width=0.8\linewidth]{figures/iv-smile-long.png}
   \caption{Longest maturity available}
   \label{fig:iv-smile-long}
 \end{figure}
+
+We finally make a comment on the calibrated SVJJ parameters, which are available in
+\Cref{tab:svjj-params} of \Cref{app:calibration-tables}. No parameter lies at its bound, and the
+optimiser terminated with a first-order optimality of $9.7\times 10^{-6}$.
+
+The strongly negative correlation $\rho=-0.84$ corresponds to the leverage effect, negative price
+shocks tend to coincide with positive variance shocks. The variance mean reverts quickly with a
+half-life of $\ln 2/\kappa_v\approx 0.25$ years. 
+The large volatility of variance, $\sigma_v=0.47$, violates the Feller condition ($2\kappa_v
+v\approx 0.07<\sigma_v^2\approx 0.23$), but this does not affect Fourier pricing.
+
+Jumps arrive on average once every ten months ($\lambda=1.21$). A jump is mainly a variance event,
+the mean variance jump $\mu_v=0.065$ lifts the volatility of the variance from $\sqrt{V_0}\approx
+10.8\%$ to about $27.7\%$. 
+With $\rho_j=-0.79$ and a small noise level $\sigma=1.4\%$, a larger variance jump is accompanied by
+a more negative price jump, so jumps act as crashes with a volatility spike. The average log-price
+jump is $\mu_s+\rho_j\mu_v\approx-2.9\%$. 
+
 
 
 
